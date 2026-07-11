@@ -23,7 +23,7 @@ type TOTPSetupInfo struct {
 // GenerateTOTPSetup 生成 2FA 配置
 func GenerateTOTPSetup(username string) (*TOTPSetupInfo, error) {
 	key, err := totp.Generate(totp.GenerateOpts{
-		Issuer:      "QVMConsole",
+		Issuer:      "QVMHub",
 		AccountName: strings.TrimSpace(username),
 		Algorithm:   otp.AlgorithmSHA1,
 		Digits:      otp.DigitsSix,

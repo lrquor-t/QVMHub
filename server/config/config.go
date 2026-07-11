@@ -14,7 +14,7 @@ import (
 const (
 	defaultMaintenanceServiceUnits = "kvm-console.service,libvirtd.service,libvirtd.socket,libvirtd-ro.socket,libvirtd-admin.socket"
 	DefaultISODir                  = "/var/lib/libvirt/images/ISO"
-	DefaultSiteTitle               = "QVMConsole"
+	DefaultSiteTitle               = "QVMHub"
 	defaultJWTSecret               = "kvm-console-secret-key-change-me"
 )
 
@@ -260,7 +260,7 @@ func Init() {
 		SMTPPort:                              getEnvInt("KVM_SMTP_PORT", 587),
 		SMTPUsername:                          getEnv("KVM_SMTP_USERNAME", ""),
 		SMTPPasswordEnc:                       getEnv("KVM_SMTP_PASSWORD_ENC", ""),
-		SMTPFromName:                          getEnv("KVM_SMTP_FROM_NAME", "QVMConsole"),
+		SMTPFromName:                          getEnv("KVM_SMTP_FROM_NAME", "QVMHub"),
 		SMTPFromAddress:                       getEnv("KVM_SMTP_FROM_ADDRESS", ""),
 		SMTPSecurity:                          getEnv("KVM_SMTP_SECURITY", "starttls"),
 		SMTPTimeoutSeconds:                    getEnvInt("KVM_SMTP_TIMEOUT_SECONDS", 15),

@@ -34,11 +34,9 @@ bundled/
 *.sw?
 *.exe
 *.test
-kvm-console-linux-amd64
-kvm-console
-kvm-console.exe
-kvm_console
+/qvmhub
 server/qvmhub-bin
+.env
 server/tmp/
 release/
 docs-web

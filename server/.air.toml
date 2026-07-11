@@ -3,8 +3,8 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  cmd = "go build -o ./tmp/kvm-console ."
-  bin = "./tmp/kvm-console"
+  cmd = "go build -o ./tmp/qvmhub ."
+  bin = "./tmp/qvmhub"
   # 监听文件变化
   include_ext = ["go"]
   exclude_dir = ["tmp", "vendor"]
