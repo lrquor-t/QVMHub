@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -24,12 +25,14 @@ func TestMain(m *testing.M) {
 }
 
 func TestLoginDefaultAdmin(t *testing.T) {
-	// 临时 SQLite + 固定 JWT secret,保证可复现
-	t.Setenv("KVM_DB_PATH", "/tmp/qvmhub-test.db")
+	// 独立临时目录(SQLite + 日志),保证可复现且不污染开发库;
+	// 用 t.TempDir() 而非硬编码 /tmp 路径,确保任意执行用户可写。
+	tmp := t.TempDir()
+	t.Setenv("KVM_DB_PATH", filepath.Join(tmp, "qvmhub-test.db"))
 	t.Setenv("KVM_JWT_SECRET", "test-secret-do-not-use-in-prod")
 	config.Init()
 	logger.InitWithConsoleConfig(
-		"/tmp/qvmhub-test-logs", "info", 7, true, false, "", "info", 10, 3,
+		filepath.Join(tmp, "logs"), "info", 7, true, false, "", "info", 10, 3,
 	)
 	t.Cleanup(func() { logger.Close() })
 
