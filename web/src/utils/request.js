@@ -35,6 +35,19 @@ export function sseURL(path, query = '') {
   return baseURL + prefix + path + qs
 }
 
+// wsURL 为浏览器原生 WebSocket 构造节点感知的绝对地址(与 sseURL 同理,但产出 ws(s)://host/api/...)。
+// 控制台 WS(VNC/LXC 终端)同样经控制器 /api/n/{id}/api 中继到节点(§6.1/§6.3)。
+// path 形如 "/vm/<name>/vnc/ws";query 形如 "token=xxx"(可空)。
+export function wsURL(path, query = '') {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = window.location.host
+  const nodeStore = useNodeStore()
+  const id = nodeStore.selectedNodeId
+  const prefix = id ? '/n/' + id + '/api' : ''
+  const qs = query ? (query.startsWith('?') ? query : '?' + query) : ''
+  return `${protocol}//${host}${baseURL}${prefix}${path}${qs}`
+}
+
 
 let requestCount = 0
 const startLoading = () => {

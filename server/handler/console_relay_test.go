@@ -12,12 +12,13 @@ func TestIsConsoleWSPath(t *testing.T) {
 		want bool
 	}{
 		{"/api/vm/myvm/vnc/ws", true},
-		{"/api/lxc/ct1/terminal/ws", true},
+		{"/api/lxc/ct1/console/ws", true},
 		{"/api/vm/myvm/vnc", false},       // 不以 /ws 结尾
-		{"/api/vm/myvm/console/ws", false}, // 非 vnc/terminal
+		{"/api/vm/myvm/console/ws", false}, // vm 下只认 vnc/ws
 		{"/api/host/stats", false},
 		{"/api/vm/list", false},
-		{"/api/lxc/ct1/vnc/ws", false}, // lxc 下只认 terminal/ws
+		{"/api/lxc/ct1/vnc/ws", false},      // lxc 下只认 console/ws
+		{"/api/lxc/ct1/terminal/ws", false}, // 节点无此路由,非控制台 WS
 	}
 	for _, tc := range cases {
 		require.Equal(t, tc.want, isConsoleWSPath(tc.path), "path=%s", tc.path)

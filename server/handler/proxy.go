@@ -50,7 +50,7 @@ func loadProxyNode(c *gin.Context) (*model.HostNode, string, bool) {
 
 // ProxyNode 是通用反向代理:剥 /api/n/{nodeId} 前缀、附节点 admin API Key、转发并把响应原样回传。
 // 设计 §3.1:浏览器把请求打到 /api/n/{nodeId}/api/...,控制器透传到节点。
-// 控制台路径(/api/vm/<name>/vnc/ws、/api/lxc/<name>/terminal/ws)走 WS 中继(§6.1/§6.3)。
+// 控制台路径(/api/vm/<name>/vnc/ws、/api/lxc/<name>/console/ws)走 WS 中继(§6.1/§6.3)。
 func ProxyNode(c *gin.Context) {
 	proxyPath := c.Param("proxyPath")
 

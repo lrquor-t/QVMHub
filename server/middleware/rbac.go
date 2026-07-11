@@ -43,5 +43,5 @@ func denyProxy(c *gin.Context, msg string) {
 // isConsoleWSRequestPath 判定完整请求路径是否为控制台 WS(/api/n/{id}/api/vm/.../vnc/ws 等)。
 func isConsoleWSRequestPath(path string) bool {
 	return (strings.HasSuffix(path, "/vnc/ws") && strings.Contains(path, "/api/vm/")) ||
-		(strings.HasSuffix(path, "/terminal/ws") && strings.Contains(path, "/api/lxc/"))
+		(strings.HasSuffix(path, "/console/ws") && strings.Contains(path, "/api/lxc/"))
 }

@@ -107,7 +107,7 @@ func TestConsoleWSRelayLXCTerminal(t *testing.T) {
 	token := loginAsAdmin(t, ts)
 
 	wsURL := strings.Replace(ts.URL, "http://", "ws://", 1) +
-		"/api/n/" + itoa(view.ID) + "/api/lxc/ct1/terminal/ws?token=" + token
+		"/api/n/" + itoa(view.ID) + "/api/lxc/ct1/console/ws?token=" + token
 	c, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	require.NoError(t, err)
 	defer c.Close()

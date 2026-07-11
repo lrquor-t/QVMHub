@@ -1,3 +1,5 @@
+import { wsURL } from '@/utils/request'
+
 // X11 Keysyms — @novnc/novnc 1.7.0 包 exports 限制子路径导入，因此内联所需常量
 const Keysyms = {
   XK_BackSpace:     0xff08,
@@ -127,9 +129,8 @@ export const COMMON_VNC_SHORTCUTS = [
 export const PRIMARY_VNC_SHORTCUT = shortcutMap.ctrlAltDel
 
 export function buildVncWsUrl(vmName, token) {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const host = window.location.host
-  return `${protocol}//${host}/api/vm/${vmName}/vnc/ws?token=${encodeURIComponent(token)}`
+  // 经控制器 /api/n/{nodeId}/api 中继到节点(§6.1);wsURL 负责拼节点前缀与 ws(s) scheme。
+  return wsURL(`/vm/${vmName}/vnc/ws`, 'token=' + encodeURIComponent(token))
 }
 
 export function refreshVncViewport(rfb) {

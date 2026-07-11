@@ -22,12 +22,12 @@ var wsUpgrader = websocket.Upgrader{
 // isConsoleWSPath 判定是否为需要 WS 中继的控制台路径(设计 §6.1/§6.3)。
 //
 //	/api/vm/<name>/vnc/ws        —— VNC
-//	/api/lxc/<name>/terminal/ws  —— LXC 终端
+//	/api/lxc/<name>/console/ws   —— LXC 终端(节点 QVMConsole 实际注册的路由,非 /terminal/ws)
 func isConsoleWSPath(p string) bool {
 	if strings.HasSuffix(p, "/vnc/ws") && strings.HasPrefix(p, "/api/vm/") {
 		return true
 	}
-	if strings.HasSuffix(p, "/terminal/ws") && strings.HasPrefix(p, "/api/lxc/") {
+	if strings.HasSuffix(p, "/console/ws") && strings.HasPrefix(p, "/api/lxc/") {
 		return true
 	}
 	return false

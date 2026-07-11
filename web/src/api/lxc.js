@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request, { wsURL } from '@/utils/request'
 
 // 容器列表
 export function getLXCList() {
@@ -85,11 +85,9 @@ export function updateLXCTemplate(name, data) {
   return request({ url: `/lxc/template/${name}`, method: 'put', data })
 }
 
-// 构造终端 WS 地址（与 utils/vnc.js 的 buildVncWsUrl 风格一致）
+// 构造终端 WS 地址:节点侧路径为 /api/lxc/<name>/console/ws(与节点 QVMConsole 实际注册的路由一致),经控制器 /api/n/{nodeId}/api 中继。
 export function buildLXCConsoleWsUrl(name, token) {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const host = window.location.host
-  return `${protocol}//${host}/api/lxc/${name}/console/ws?token=${encodeURIComponent(token)}`
+  return wsURL(`/lxc/${name}/console/ws`, 'token=' + encodeURIComponent(token))
 }
 
 // ==================== LXC 模板 rootfs tarball 分片上传 ====================
