@@ -51,6 +51,32 @@
           <span class="page-title">{{ route.meta.title || displaySiteTitle }}</span>
         </div>
         <div class="right-menu">
+          <el-select
+            v-model="nodeStore.selectedNodeId"
+            placeholder="选择节点"
+            size="small"
+            class="node-selector"
+            :loading="nodesLoading"
+            @change="onNodeChange"
+          >
+            <template #prefix>
+              <el-icon><Connection /></el-icon>
+            </template>
+            <el-option
+              v-for="n in nodeStore.nodes"
+              :key="n.id"
+              :label="n.name + (n.online ? '' : '（离线）')"
+              :value="String(n.id)"
+            >
+              <span class="node-option-name">{{ n.name }}</span>
+              <el-tag
+                :type="nodeStatusType(n)"
+                size="small"
+                effect="plain"
+                class="node-option-tag"
+              >{{ nodeStatusLabel(n) }}</el-tag>
+            </el-option>
+          </el-select>
           <el-badge :value="activeTaskCount" :hidden="activeTaskCount === 0" :max="99" class="task-badge">
             <el-button text circle @click="toggleRecentTaskPanel" title="近期任务" class="task-toggle-btn">
               <el-icon size="18"><List /></el-icon>
@@ -363,12 +389,15 @@ import { computed, ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import QRCode from 'qrcode'
 import { useUserStore } from '@/store/user'
+import { useNodeStore } from '@/store/node'
 import { getAPIKeyInfo, revokeAPIKey, rotateAPIKey } from '@/api/apiKey'
 import { bindEmail, changePassword, changeUsername, disable2FA, enable2FA, getUserInfo, regenRecoveryCodes, sendEmailCode, setup2FA } from '@/api/auth'
+import { getOverview } from '@/api/node'
 import SidebarIcons from '@/components/icons/SidebarIcons.vue'
 import {
   ArrowDown,
   Close,
+  Connection,
   Expand,
   Fold,
   Link,
@@ -391,6 +420,8 @@ import RecentTaskPanel from '@/components/RecentTaskPanel.vue'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const nodeStore = useNodeStore()
+const nodesLoading = ref(false)
 const displaySiteTitle = computed(() => siteTitle.value)
 
 const isAdmin = computed(() => userStore.role === 'admin')
@@ -422,6 +453,7 @@ onMounted(() => {
     document.documentElement.classList.add('dark')
   }
   refreshSecurityInfo()
+  loadNodes()
 
   // 监听弹窗打开，自动收起异步任务面板
   dialogObserver = new MutationObserver((mutations) => {
@@ -459,6 +491,46 @@ const handleMenuSelect = () => {
   if (isMobile.value) {
     isCollapse.value = true // 移动端点击菜单后自动收起
   }
+}
+
+// ===== QVMHub 节点选择 =====
+async function loadNodes() {
+  nodesLoading.value = true
+  try {
+    const res = await getOverview()
+    const list = res?.data?.nodes || []
+    nodeStore.nodes = list
+    nodeStore.pickDefault()
+    if (nodeStore.selectedNodeName) {
+      // 同步显示名(节点可能已被改名)
+      const cur = list.find((n) => String(n.id) === nodeStore.selectedNodeId)
+      if (cur) nodeStore.selectedNodeName = cur.name
+    }
+  } catch (e) {
+    // 未登录或无节点时静默;登录后会重试。
+  } finally {
+    nodesLoading.value = false
+  }
+}
+
+function onNodeChange(id) {
+  const n = nodeStore.nodes.find((x) => String(x.id) === String(id))
+  nodeStore.setSelected(n || { id, name: '' })
+  // 切节点后刷新当前页数据(业务页按新节点重新拉取)。
+  if (route.meta?.keepAlive !== true) {
+    router.replace({ path: route.fullPath, query: { ...route.query, _n: Date.now() } }).catch(() => {})
+  }
+}
+
+function nodeStatusLabel(n) {
+  if (!n) return ''
+  if (!n.enabled) return '已禁用'
+  if (n.online) return '在线'
+  return '离线'
+}
+function nodeStatusType(n) {
+  if (!n || !n.enabled) return 'info'
+  return n.online ? 'success' : 'danger'
 }
 
 // 暗黑模式逻辑
@@ -1061,6 +1133,17 @@ html.dark .navbar {
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
+}
+
+.node-selector {
+  width: 180px;
+  margin-right: 6px;
+}
+.node-option-name {
+  margin-right: 8px;
+}
+.node-option-tag {
+  float: right;
 }
 
 .user-info {

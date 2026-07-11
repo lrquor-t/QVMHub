@@ -45,3 +45,11 @@ export function getNodeMigrationOptions(id, params) {
     params
   })
 }
+
+// QVMHub 总览:列出所有节点 + 健康状态(控制器自有,不经节点代理)。
+export function getOverview() {
+  return request({
+    url: '/overview',
+    method: 'get'
+  })
+}

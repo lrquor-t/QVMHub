@@ -1,10 +1,27 @@
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import { useNodeStore } from '@/store/node'
 import router from '@/router'
 import NProgress from 'nprogress'
 
 const baseURL = import.meta.env.VITE_APP_BASE_API || '/api'
+
+// QVMHub 控制器自有路径(不经节点代理):auth/nodes/overview/public/settings。
+// 其余业务路径(vm/lxc/host/network/storage/task/...)按选中节点拼 /api/n/{nodeId} 前缀。
+const CONTROLLER_NATIVE_PREFIXES = ['/auth', '/nodes', '/overview', '/public', '/settings']
+
+function resolveNodePrefix(url) {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return '' // 绝对地址不动
+  for (const p of CONTROLLER_NATIVE_PREFIXES) {
+    if (url === p || url.startsWith(p + '/')) return ''
+  }
+  const nodeStore = useNodeStore()
+  const id = nodeStore.selectedNodeId
+  return id ? '/n/' + id : ''
+}
+
 
 let requestCount = 0
 const startLoading = () => {
@@ -52,6 +69,11 @@ service.interceptors.request.use(
     config.headers = config.headers || {}
     if (userStore.token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${userStore.token}`
+    }
+    // QVMHub:业务请求按选中节点拼前缀(/api/n/{nodeId}/...)。
+    const prefix = resolveNodePrefix(config.url)
+    if (prefix) {
+      config.url = prefix + config.url
     }
     return config
   },
