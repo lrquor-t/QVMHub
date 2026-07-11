@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -41,4 +42,25 @@ func TestCopyProxyHeadersStripsAuth(t *testing.T) {
 	require.NotContains(t, dst, "X-Api-Key-Id")
 	require.Equal(t, "application/json", dst.Get("Content-Type"))
 	require.Equal(t, "application/json", dst.Get("Accept"))
+}
+
+func TestIsStreamRequest(t *testing.T) {
+	cases := []struct {
+		path   string
+		accept string
+		want   bool
+	}{
+		{"/api/host/stats/sse", "", true},
+		{"/api/task/events", "", true},
+		{"/api/vm/list", "", false},
+		{"/api/vm/console", "text/event-stream", true},
+		{"/api/vm/list", "application/json", false},
+	}
+	for _, tc := range cases {
+		req := httptest.NewRequest(http.MethodGet, tc.path, nil)
+		if tc.accept != "" {
+			req.Header.Set("Accept", tc.accept)
+		}
+		require.Equal(t, tc.want, isStreamRequest(req), "path=%s accept=%s", tc.path, tc.accept)
+	}
 }
