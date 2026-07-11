@@ -141,8 +141,10 @@ func buildHostNodeFromRequest(current model.HostNode, req HostNodeRequest, creat
 	if req.SSHUser == "" {
 		req.SSHUser = "root"
 	}
-	if req.Name == "" || req.APIBaseURL == "" || req.SSHHost == "" {
-		return current, fmt.Errorf("节点名称、面板地址和 SSH 地址不能为空")
+	// QVMHub 是纯 HTTP/WS 代理(设计 §5.1),控制器自身从不 SSH 到节点;
+	// SSH 字段仅为「整模型复用、避免 schema 漂移」保留,故这里只校验 HTTP 必填项。
+	if req.Name == "" || req.APIBaseURL == "" || req.APIKeyID == "" {
+		return current, fmt.Errorf("节点名称、面板地址和 API Key ID 不能为空")
 	}
 	if _, err := url.ParseRequestURI(req.APIBaseURL); err != nil {
 		return current, fmt.Errorf("面板 API 地址格式无效")
@@ -171,15 +173,13 @@ func buildHostNodeFromRequest(current model.HostNode, req HostNodeRequest, creat
 	if creating && strings.TrimSpace(current.APIKeyEnc) == "" {
 		return current, fmt.Errorf("目标面板 API Key 不能为空")
 	}
+	// SSH 凭证可选:仅当显式提供时才加密落库(节点间 P2P 迁移可能用到,控制器自身不用)。
 	if strings.TrimSpace(req.SSHPassword) != "" {
 		enc, err := EncryptNodeSecret(req.SSHPassword)
 		if err != nil {
 			return current, fmt.Errorf("加密 root 密码失败: %w", err)
 		}
 		current.SSHPasswordEnc = enc
-	}
-	if creating && strings.TrimSpace(current.SSHPasswordEnc) == "" {
-		return current, fmt.Errorf("SSH root 密码不能为空")
 	}
 	return current, nil
 }
@@ -189,11 +189,17 @@ func BuildHostNodeView(node model.HostNode) HostNodeView {
 	if strings.TrimSpace(node.CapabilitiesJSON) != "" {
 		_ = json.Unmarshal([]byte(node.CapabilitiesJSON), &caps)
 	}
+	// 明文 Key 永不回传浏览器;仅暴露脱敏前缀(§5.6)。解密失败时留空,不影响列表。
+	keyPrefix := ""
+	if plain, err := DecryptHostNodeAPIKey(node); err == nil {
+		keyPrefix = maskAPIKey(plain)
+	}
 	return HostNodeView{
 		ID:               node.ID,
 		Name:             node.Name,
 		APIBaseURL:       node.APIBaseURL,
 		APIKeyID:         node.APIKeyID,
+		APIKeyPrefix:     keyPrefix,
 		SSHHost:          node.SSHHost,
 		SSHPort:          node.SSHPort,
 		SSHUser:          node.SSHUser,
@@ -227,6 +233,18 @@ func normalizeNodeBaseURL(raw string) string {
 		return value
 	}
 	return "http://" + value
+}
+
+// maskAPIKey 返回脱敏的 API Key 前缀(如 abcd****wxyz),用于列表/详情展示,永不回传明文。
+func maskAPIKey(plain string) string {
+	plain = strings.TrimSpace(plain)
+	if plain == "" {
+		return ""
+	}
+	if len(plain) <= 8 {
+		return strings.Repeat("*", len(plain))
+	}
+	return plain[:4] + "****" + plain[len(plain)-4:]
 }
 
 func DecryptHostNodeSSHPassword(node model.HostNode) (string, error) {

@@ -21,6 +21,7 @@ type HostNodeView struct {
 	Name             string                 `json:"name"`
 	APIBaseURL       string                 `json:"api_base_url"`
 	APIKeyID         string                 `json:"api_key_id"`
+	APIKeyPrefix     string                 `json:"api_key_prefix"` // 仅前缀(abcd****wxyz),永不回传明文(§5.6)
 	SSHHost          string                 `json:"ssh_host"`
 	SSHPort          int                    `json:"ssh_port"`
 	SSHUser          string                 `json:"ssh_user"`
