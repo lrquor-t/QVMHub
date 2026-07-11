@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { getPublicSettings } from '@/api/settings'
 
-export const DEFAULT_SITE_TITLE = 'QVMConsole'
+export const DEFAULT_SITE_TITLE = 'QVMHub'
 const SITE_TITLE_STORAGE_KEY = 'site_title'
 
 // 泄露密码检测开关（默认开启）

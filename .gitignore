@@ -11,6 +11,8 @@ server/data
 node_modules
 dist
 dist-ssr
+web-dist
+*.db
 *.local
 .vscode
 scripts/

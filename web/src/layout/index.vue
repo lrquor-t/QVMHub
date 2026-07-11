@@ -65,7 +65,7 @@
             class="dark-switch"
           />
           <el-link 
-            href="https://github.com/QVMConsole/QVMConsole" 
+            href="https://github.com/QVMHub/QVMHub" 
             target="_blank" 
             :underline="false"
             class="oss-link"

@@ -38,8 +38,8 @@
         <div class="info-grid">
           <div class="info-item">
             <span class="info-label">开源地址</span>
-            <a class="info-link" href="https://github.com/QVMConsole/QVMConsole" target="_blank" rel="noopener">
-              https://github.com/QVMConsole/QVMConsole
+            <a class="info-link" href="https://github.com/QVMHub/QVMHub" target="_blank" rel="noopener">
+              https://github.com/QVMHub/QVMHub
             </a>
           </div>
           <div class="info-item">
@@ -147,7 +147,7 @@
 
     <!-- 页脚 -->
     <div class="about-footer">
-      <p>© {{ currentYear }} QVMConsole. 基于 Vue 3 + Element Plus + Go 构建</p>
+      <p>© {{ currentYear }} QVMHub. 基于 Vue 3 + Element Plus + Go 构建</p>
     </div>
   </div>
 </template>
