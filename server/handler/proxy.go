@@ -11,6 +11,7 @@ import (
 
 	"qvmhub/model"
 	"qvmhub/service/host"
+	"qvmhub/service/nodereg"
 )
 
 // proxyClient 是通用代理使用的 HTTP 客户端。45s 超时与 CallNodeAPI 一致(§7)。
@@ -42,6 +43,8 @@ func loadProxyNode(c *gin.Context) (*model.HostNode, string, bool) {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "节点凭证解密失败"})
 		return nil, "", false
 	}
+	// 记录 Key 被使用(仅内存,§5.6 last_used_at 可见性)。
+	nodereg.GlobalHealthCache.TouchUsed(node.ID)
 	return node, apiKey, true
 }
 

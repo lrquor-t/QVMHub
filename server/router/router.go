@@ -118,8 +118,11 @@ func Setup() *gin.Engine {
 			// 总览页:所有登录用户可读(跨节点只读,viewer 亦可见);只读健康缓存 + DB 名册。
 			authorized.GET("/overview", handler.GetOverview)
 
-			// 通用代理 /api/n/{nodeId}/* → 透传到节点(JWT 已由 authorized 组强制;RBAC 策略 P5)。
-			authorized.Any("/n/:nodeId/*proxyPath", handler.ProxyNode)
+			// 通用代理 /api/n/{nodeId}/* → 透传到节点(JWT 已由 authorized 组强制);
+			// P5:代理层 RBAC(admin 全权;非 admin 跨节点只读,控制台 WS 拒绝)。
+			nodeProxy := authorized.Group("/n")
+			nodeProxy.Use(middleware.ProxyRBACMiddleware())
+			nodeProxy.Any("/:nodeId/*proxyPath", handler.ProxyNode)
 
 			// ==================== 节点注册表（管理员） ====================
 			// 复用 QVMConsole 的 HostNode CRUD；P1 起被探活/健康缓存复用。

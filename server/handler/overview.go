@@ -41,6 +41,11 @@ func GetOverview(c *gin.Context) {
 			h.Online = false
 			h.Status = nodereg.StatusDisabled
 		}
+		// §5.6:admin Key 最近被代理使用的时刻(仅内存)。
+		if lu, ok := nodereg.GlobalHealthCache.LastUsed(nv.ID); ok {
+			lu := lu
+			h.LastUsedAt = &lu
+		}
 		if h.Online {
 			online++
 		}

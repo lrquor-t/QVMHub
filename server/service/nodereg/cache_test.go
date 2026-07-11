@@ -72,3 +72,21 @@ func TestHealthCacheConcurrent(t *testing.T) {
 	wg.Wait()
 	require.Equal(t, writers, c.Len())
 }
+
+// TestHealthCacheTouchUsed 验证 §5.6 last_used_at:TouchUsed 后可取到时刻;探活 Set 不覆盖它。
+func TestHealthCacheTouchUsed(t *testing.T) {
+	c := NewHealthCache()
+	_, ok := c.LastUsed(1)
+	require.False(t, ok)
+
+	c.TouchUsed(1)
+	first, ok := c.LastUsed(1)
+	require.True(t, ok)
+	require.False(t, first.IsZero())
+
+	// 探活写入 NodeHealth 不应清除 lastUsed。
+	c.Set(NodeHealth{NodeID: 1, Status: StatusOnline})
+	lu, ok := c.LastUsed(1)
+	require.True(t, ok)
+	require.Equal(t, first, lu)
+}

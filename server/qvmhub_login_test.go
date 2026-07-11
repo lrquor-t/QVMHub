@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -18,24 +19,30 @@ import (
 	"qvmhub/router"
 )
 
-// TestMain 为所有 qvmhub 测试做一次性初始化(独立临时 DB,不污染开发库)。
+// TestMain 为整个 qvmhub 测试二进制做一次性初始化。
+//
+// 关键:全局 logger.App / config.GlobalConfig 只在此处赋值一次。各测试若反复 Init 会与
+// 「WS 升级劫持连接后仍在途的请求 goroutine」(其在 RequestLoggerMiddleware 延迟日志里读
+// logger.App)发生数据竞争。一次性初始化使运行期只剩读,无并发写 → 无竞争。
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
-	m.Run()
+
+	logDir, _ := os.MkdirTemp("", "qvmhub-test-logs-")
+	logger.InitWithConsoleConfig(logDir, "info", 7, true, false, "", "info", 10, 3)
+
+	os.Setenv("KVM_JWT_SECRET", "shared-test-secret")
+	config.Init()
+
+	code := m.Run()
+	logger.Close()
+	_ = os.RemoveAll(logDir)
+	os.Exit(code)
 }
 
 func TestLoginDefaultAdmin(t *testing.T) {
-	// 独立临时目录(SQLite + 日志),保证可复现且不污染开发库;
-	// 用 t.TempDir() 而非硬编码 /tmp 路径,确保任意执行用户可写。
 	tmp := t.TempDir()
-	t.Setenv("KVM_DB_PATH", filepath.Join(tmp, "qvmhub-test.db"))
-	t.Setenv("KVM_JWT_SECRET", "test-secret-do-not-use-in-prod")
-	config.Init()
-	logger.InitWithConsoleConfig(
-		filepath.Join(tmp, "logs"), "info", 7, true, false, "", "info", 10, 3,
-	)
-	t.Cleanup(func() { logger.Close() })
-
+	// 直接覆盖 DB 路径(不重跑 config.Init,避免重置全局 logger/config)。
+	config.GlobalConfig.DBPath = filepath.Join(tmp, "qvmhub-test.db")
 	model.InitDB()
 
 	// 默认 admin 密码来自 config.DefaultAdminPass(未知),重置为已知密码以便断言

@@ -40,6 +40,7 @@ type NodeHealth struct {
 	Version    string     `json:"version,omitempty"`
 	Stats      *NodeStats `json:"stats,omitempty"`
 	LastSeen   *time.Time `json:"last_seen"`
+	LastUsedAt *time.Time `json:"last_used_at,omitempty"` // admin Key 最近被代理使用的时刻(§5.6)
 	LastError  string     `json:"last_error,omitempty"`
 	UpdatedAt  time.Time  `json:"updated_at"`
 }

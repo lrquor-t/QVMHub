@@ -14,25 +14,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"qvmhub/config"
-	"qvmhub/logger"
 	"qvmhub/model"
 	"qvmhub/router"
 	"qvmhub/service"
 	"qvmhub/service/nodereg"
 )
 
-// initTestStack 初始化 config/logger/DB(独立临时目录),返回 cleanup。
+// initTestStack 初始化一个独立临时 DB。全局 logger/config 已由 TestMain 一次性初始化,
+// 这里只覆盖 DB 路径 + 跑迁移(避免重置全局 logger/config 与在途请求 goroutine 竞争)。
 func initTestStack(t *testing.T) {
 	t.Helper()
 	tmp := t.TempDir()
-	t.Setenv("KVM_DB_PATH", filepath.Join(tmp, "qvmhub.db"))
-	t.Setenv("KVM_JWT_SECRET", "overview-test-secret")
-	config.Init()
-	logger.InitWithConsoleConfig(
-		filepath.Join(tmp, "logs"), "info", 7, true, false, "", "info", 10, 3,
-	)
-	t.Cleanup(func() { logger.Close() })
+	config.GlobalConfig.DBPath = filepath.Join(tmp, "qvmhub.db")
 	model.InitDB()
+	nodereg.GlobalHealthCache.Reset() // 隔离:清掉上个测试残留的缓存
 }
 
 // loginAsAdmin 重置默认 admin 密码为已知值并登录,返回 "Bearer <token>" 与用户名。
