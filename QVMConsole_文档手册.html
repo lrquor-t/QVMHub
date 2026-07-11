@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QVMConsole 文档手册</title>
+<style>
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --surface2: #1c2a4a;
+  --text: #e0e0e0;
+  --text2: #a0a0b0;
+  --accent: #4fc3f7;
+  --accent2: #81c784;
+  --accent3: #ffb74d;
+  --border: #2a2a4a;
+  --code-bg: #0d1117;
+}
+* { box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; margin: 0; padding: 0; display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: 300px;
+  min-width: 300px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 16px;
+  font-size: 13px;
+}
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.sidebar h2 { font-size: 16px; color: var(--accent); border: none; margin: 0 0 12px 0; padding: 0; }
+.sidebar a { color: var(--text2); text-decoration: none; display: block; padding: 3px 8px; border-radius: 4px; transition: all 0.15s; }
+.sidebar a:hover { color: var(--accent); background: var(--surface2); text-decoration: none; }
+.sidebar .toc-l1 > a { font-weight: 600; color: var(--accent2); padding: 5px 8px; margin-top: 6px; }
+.sidebar .toc-l1 > a:hover { color: var(--accent); }
+.sidebar .toc-l2 { padding-left: 12px; }
+.sidebar .toc-l2 > a { font-weight: 500; color: var(--text); }
+.sidebar .toc-l2 > a:hover { color: var(--accent); }
+.sidebar .toc-l3 { padding-left: 24px; }
+.sidebar .toc-l3 > a { color: var(--text2); font-size: 12.5px; }
+.sidebar .toc-l3 > a:hover { color: var(--accent); }
+.sidebar .toc-l4 { padding-left: 36px; }
+.sidebar .toc-l4 > a { color: #787890; font-size: 12px; }
+.sidebar .toc-l4 > a:hover { color: var(--accent); }
+.sidebar .active { color: var(--accent) !important; background: var(--surface2); border-left: 2px solid var(--accent); }
+
+/* Main Content */
+.main {
+  flex: 1;
+  min-width: 0;
+  max-width: 1000px;
+  padding: 30px 40px;
+}
+.main h1 { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-top: 0; }
+.main h2 { color: var(--accent2); border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-top: 30px; }
+.main h3 { color: var(--accent3); margin-top: 24px; }
+.main h4 { color: var(--text); margin-top: 18px; }
+.main a { color: var(--accent); text-decoration: none; }
+.main a:hover { text-decoration: underline; }
+.main table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; }
+.main th, .main td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+.main th { background: var(--surface2); color: var(--accent); }
+.main tr:nth-child(even) { background: var(--surface); }
+.main code { background: var(--code-bg); padding: 2px 6px; border-radius: 3px; font-size: 0.9em; color: #ffa07a; }
+.main pre { background: var(--code-bg); padding: 14px; border-radius: 6px; overflow-x: auto; font-size: 13px; border: 1px solid var(--border); white-space: pre-wrap; word-break: break-word; }
+.main hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+.main blockquote { border-left: 4px solid var(--accent3); margin: 16px 0; padding: 10px 16px; background: var(--surface); }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-right: 4px; }
+.tag-green { background: #1b5e20; color: #a5d6a7; }
+.tag-red { background: #b71c1c; color: #ef9a9a; }
+.tag-yellow { background: #f57f17; color: #fff9c4; }
+.tag-blue { background: #0d47a1; color: #90caf9; }
+.warn { background: #3e2723; border-left: 4px solid #ff5722; padding: 12px 16px; margin: 16px 0; border-radius: 4px; }
+.info { background: #0d3318; border-left: 4px solid #4caf50; padding: 12px 16px; margin: 16px 0; border-radius: 4px; }
+.tip { background: #1a237e; border-left: 4px solid #2196f3; padding: 12px 16px; margin: 16px 0; border-radius: 4px; }
+.section-title { font-size: 1.4em; color: var(--accent2); margin: 40px 0 20px; padding: 10px 16px; background: var(--surface); border-radius: 6px; border-left: 4px solid var(--accent2); }
+/* Sync Button & Modal */
+.sync-btn { display: flex; align-items: center; gap: 6px; width: 100%; padding: 8px 12px; margin: 12px 0 4px; background: var(--surface2); color: var(--accent2); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+.sync-btn:hover { background: var(--border); color: var(--accent); }
+.sync-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.sync-btn .spinner { display: none; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+.sync-btn.loading .spinner { display: inline-block; }
+.sync-btn.loading .label-text { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; }
+.modal-overlay.show { display: flex; align-items: center; justify-content: center; }
+.modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; max-width: 640px; width: 90%; max-height: 80vh; overflow-y: auto; }
+.modal-box h3 { color: var(--accent); margin: 0 0 12px; }
+.modal-box p, .modal-box li { color: var(--text2); font-size: 14px; line-height: 1.6; }
+.modal-box ol { padding-left: 20px; }
+.modal-box code { font-size: 13px; }
+.modal-close { float: right; background: none; border: none; color: var(--text2); font-size: 22px; cursor: pointer; padding: 0 4px; }
+.modal-close:hover { color: var(--accent); }
+.sync-status { margin: 8px 0; padding: 8px 12px; border-radius: 6px; font-size: 13px; display: none; }
+.sync-status.success { display: block; background: #0d3318; border-left: 3px solid #4caf50; color: #a5d6a7; }
+.sync-status.error { display: block; background: #3e2723; border-left: 3px solid #ff5722; color: #ef9a9a; }
+.sync-status.info { display: block; background: #1a237e; border-left: 3px solid #2196f3; color: #90caf9; }
+.back-to-top { position: fixed; bottom: 20px; right: 20px; background: var(--surface2); color: var(--accent); border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; cursor: pointer; font-size: 13px; display: none; }
+.back-to-top:hover { background: var(--border); }
+@media (max-width: 900px) {
+  body { flex-direction: column; }
+  .sidebar { width: 100%; min-width: 0; height: auto; max-height: 40vh; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+  .main { padding: 20px; }
+}
+@media print { .sidebar { display: none; } body { display: block; } .main { padding: 0; } }
+</style>
+</head>
+<body>
+
+<!-- ====== Sidebar ====== -->
+<nav class="sidebar" id="sidebar">
+  <h2>📖 QVMConsole 文档</h2>
+  <button class="sync-btn" id="syncBtn" onclick="startSync()"><span class="spinner"></span><span class="label-text">🔄 同步线上最新文档</span></button>
+  <div class="toc-l1"><a href="#part1">第一部分：安装与使用</a></div>
+  <div class="toc-l2"><a href="#s1.1">1. 部署</a></div>
+  <div class="toc-l3"><a href="#s1.1.1">系统要求</a></div>
+  <div class="toc-l3"><a href="#s1.1.2">环境准备</a></div>
+  <div class="toc-l3"><a href="#s1.1.3">部署方法</a></div>
+  <div class="toc-l2"><a href="#s1.2">2. 快速入门</a></div>
+  <div class="toc-l3"><a href="#s1.2.1">基础设施配置</a></div>
+  <div class="toc-l3"><a href="#s1.2.2">使用模板创建虚拟机</a></div>
+  <div class="toc-l2"><a href="#s1.3">3. 进阶内容</a></div>
+  <div class="toc-l3"><a href="#s1.3.1">制作模板</a></div>
+  <div class="toc-l3"><a href="#s1.3.2">安装 Windows</a></div>
+  <div class="toc-l3"><a href="#s1.3.3">安装 Linux</a></div>
+  <div class="toc-l2"><a href="#s1.4">4. 常见问题</a></div>
+  <div class="toc-l3"><a href="#s1.4.1">面板问题</a></div>
+  <div class="toc-l3"><a href="#s1.4.2">已知报错</a></div>
+  <div style="margin:16px 0;border-top:1px solid var(--border)"></div>
+  <div class="toc-l1"><a href="#part2">第二部分：功能与原理</a></div>
+  <div class="toc-l2"><a href="#s2.1">1. 功能与架构</a></div>
+  <div class="toc-l3"><a href="#s2.1.1">虚拟化概述</a></div>
+  <div class="toc-l3"><a href="#s2.1.2">QVMConsole 架构</a></div>
+  <div class="toc-l3"><a href="#s2.1.3">虚拟机迁移</a></div>
+  <div class="toc-l3"><a href="#s2.1.4">系统初始化原理</a></div>
+  <div class="toc-l3"><a href="#s2.1.5">模板管理原理</a></div>
+  <div class="toc-l2"><a href="#s2.2">2. 虚拟机</a></div>
+  <div class="toc-l3"><a href="#s2.2.1">创建方式</a></div>
+  <div class="toc-l3"><a href="#s2.2.2">基础配置</a></div>
+  <div class="toc-l3"><a href="#s2.2.3">硬件规格</a></div>
+  <div class="toc-l3"><a href="#s2.2.4">存储配置</a></div>
+  <div class="toc-l3"><a href="#s2.2.5">网络配置</a></div>
+  <div class="toc-l3"><a href="#s2.2.6">系统配置</a></div>
+  <div class="toc-l3"><a href="#s2.2.7">高级设置</a></div>
+  <div class="toc-l3"><a href="#s2.2.8">硬件直通</a></div>
+  <div class="toc-l3"><a href="#s2.2.9">快照管理</a></div>
+  <div class="toc-l3"><a href="#s2.2.10">磁盘迁移与扩容</a></div>
+  <div class="toc-l2"><a href="#s2.3">3. 网络</a></div>
+  <div class="toc-l3"><a href="#s2.3.1">网络概览</a></div>
+  <div class="toc-l3"><a href="#s2.3.2">VPC 交换机</a></div>
+  <div class="toc-l3"><a href="#s2.3.3">安全组策略</a></div>
+  <div class="toc-l3"><a href="#s2.3.4">端口转发</a></div>
+  <div class="toc-l3"><a href="#s2.3.5">ACL 管理</a></div>
+  <div class="toc-l2"><a href="#s2.4">4. 公网 IP</a></div>
+  <div class="toc-l2"><a href="#s2.5">5. 防火墙</a></div>
+  <div class="toc-l3"><a href="#s2.5.1">宿主机防火墙</a></div>
+  <div class="toc-l3"><a href="#s2.5.2">KVM 网络防火墙</a></div>
+  <div class="toc-l3"><a href="#s2.5.3">连接管理</a></div>
+  <div class="toc-l2"><a href="#s2.6">6. 存储池</a></div>
+  <div class="toc-l2"><a href="#s2.7">7. 节点管理</a></div>
+  <div class="toc-l2"><a href="#s2.8">8. 我的存储</a></div>
+  <div class="toc-l2"><a href="#s2.9">9. 用户管理</a></div>
+  <div class="toc-l2"><a href="#s2.10">10. 调度事件</a></div>
+  <div class="toc-l2"><a href="#s2.11">11. 系统设置</a></div>
+</nav>
+
+<!-- ====== Main Content ====== -->
+<main class="main">
+
+<p style="color:var(--text2); margin-bottom:4px;">来源: <a href="https://qvmcdocs.xiaozhuhouses.asia/">qvmcdocs.xiaozhuhouses.asia</a></p>
+<h1>QVMConsole 完整文档手册</h1>
+<p style="color:var(--text2)">基于 KVM/QEMU 构建的轻量级虚拟机管理面板 · 文档版本: 2026-06</p>
+
+<!-- ============================================================ -->
+<!-- 第一部分 -->
+<!-- ============================================================ -->
+<div id="part1" class="section-title">第一部分：安装与使用</div>
+
+<h2 id="s1.1">1. 部署</h2>
+
+<h3 id="s1.1.1">系统要求</h3>
+
+<h4>兼容系统</h4>
+<table>
+<tr><th>发行版</th><th>版本</th></tr>
+<tr><td>Ubuntu</td><td>24.04 / 26.04</td></tr>
+<tr><td>Debian</td><td>Trixie</td></tr>
+</table>
+<p><strong>内核版本要求：</strong> Linux 6.12 - Linux 7.0.22</p>
+
+<h4>硬件要求</h4>
+<table>
+<tr><th>资源</th><th>最低配置</th></tr>
+<tr><td>CPU</td><td>≥2 核 2 线程</td></tr>
+<tr><td>内存</td><td>≥4 GB</td></tr>
+<tr><td>硬盘</td><td>≥50 GB</td></tr>
+</table>
+
+<div class="warn">
+<strong>重要提示：</strong>
+<ul>
+<li>必须是纯净的系统环境，可以与 Docker 共存，但不要安装过其它涉及网络相关的软件包</li>
+<li>Debian 以及其它系统必须要把系统语言改成英语</li>
+</ul>
+</div>
+
+<h3 id="s1.1.2">环境准备</h3>
+<pre>sudo apt update && sudo apt full-upgrade
+reboot</pre>
+
+<h3 id="s1.1.3">部署方法</h3>
+<h4>面板管理脚本</h4>
+<pre>wget https://download.qvmconsole.xiaozhuhouses.asia/app1/latest/qvmc-manage.sh
+bash qvmc-manage.sh</pre>
+
+<div class="warn"><strong>使用协议：</strong>使用本软件前请务必阅读并同意用户协议与内测须知。</div>
+
+<hr>
+
+<h2 id="s1.2">2. 快速入门</h2>
+
+<h3 id="s1.2.1">基础设施配置</h3>
+
+<h4>创建网络</h4>
+<p>QVMConsole 采用 OVS（Open vSwitch）交换机体系，提供两种网络模式：</p>
+
+<h4>NAT 模式（公有云推荐）</h4>
+<p>虚拟机不需要从外部直接访问的场景。系统内部 DHCP 服务统一管理网络和分配 IP，若需从外部访问虚拟机，可使用端口转发功能。</p>
+
+<h4>桥接模式（私有云推荐）</h4>
+<p>将物理网口直接与虚拟机打通，由上级路由器统一管理。步骤：</p>
+<ol>
+<li>创建物理网桥：选择物理网卡创建 OVS 网桥</li>
+<li>创建交换机：绑定 OVS 网桥，配置 VLAN ID</li>
+</ol>
+
+<h4>创建存储池</h4>
+<p>每个卡片对应一个物理磁盘。支持两种方式：</p>
+<ul>
+<li><strong>物理磁盘作为存储（新手推荐）</strong>：在界面中根据磁盘容量进行分区</li>
+<li><strong>多物理磁盘合并为 LVM 卷</strong>：适用于大容量存储灵活管理</li>
+</ul>
+
+<h4>配置 ISO 存放目录（可选）</h4>
+<p>开通"我的存储"功能后在系统设置中修改 ISO 存储位置。</p>
+
+<h3 id="s1.2.2">使用模板创建虚拟机</h3>
+<h4>下载预置模板</h4>
+<p>通过以下链接下载预置模板压缩包：</p>
+<ul>
+<li>123网盘：<a href="https://1852139552.share.123865.com/123pan/OAgIvd-fYoOH">https://1852139552.share.123865.com/123pan/OAgIvd-fYoOH</a></li>
+<li>夸克网盘：<a href="https://pan.quark.cn/s/a5c1097063cd">https://pan.quark.cn/s/a5c1097063cd</a></li>
+<li>百度网盘：<a href="https://pan.baidu.com/s/1iEftpZkQgoCWTCS5PSSlXw?pwd=6f9y">https://pan.baidu.com/s/1iEftpZkQgoCWTCS5PSSlXw?pwd=6f9y</a></li>
+</ul>
+
+<h4>导入模板</h4>
+<p>通过网页上传或 SFTP 上传到设备中，然后在模板管理页面完成导入。</p>
+
+<h4>从模板创建虚拟机</h4>
+<p>在新虚拟机表单中选择「从模板快速克隆」即可使用模板创建虚拟机。</p>
+
+<div class="warn"><strong>链式克隆警告：</strong>若选择链式克隆方式创建虚拟机，必须确保模板不能丢失或损坏，否则将造成克隆后的虚拟磁盘损坏！</div>
+
+<hr>
+
+<h2 id="s1.3">3. 进阶内容</h2>
+
+<h3 id="s1.3.1">制作模板</h3>
+
+<h4>工作原理</h4>
+<p>模板制作本质上是将虚拟机的磁盘文件进行稀疏复制（<code>cp --sparse=always</code>），支持两种克隆模式：链式克隆（速度快、占用小）和完整克隆（完全独立）。</p>
+
+<h4>制作 Windows 模板</h4>
+<ol>
+<li>下载驱动和工具（virtio 驱动 ISO、CloudbaseInit）</li>
+<li>准备系统 ISO 文件</li>
+<li>创建虚拟机（选择系统 ISO + virtio 驱动 ISO）</li>
+<li>进入审计模式（Ctrl + Shift + F3）</li>
+<li>安装驱动（virtio-win-gt-x64.msi）</li>
+<li>安装软件和环境</li>
+<li>安装 CloudbaseInit（最后两个选项不要勾选）</li>
+<li>执行 Sysprep 封装</li>
+<li>制作模板</li>
+</ol>
+
+<h4>制作 Linux 模板</h4>
+<pre># Debian/Ubuntu
+apt-get install -y cloud-init cloud-guest-utils
+
+# CentOS/RHEL
+yum install -y cloud-init cloud-utils-growpart
+
+# Fedora/Rocky/Alma
+dnf install -y cloud-init cloud-utils-growpart</pre>
+<p>然后直接关机，制作模板即可。</p>
+
+<h4>制作 OpenWrt / FnOS 模板</h4>
+<p><strong>OpenWrt：</strong>从固件官网下载 img 导入虚拟机确保正常开机，然后直接关机制作模板。</p>
+<p><strong>FnOS：</strong>前往飞牛官网下载 ISO 正常安装飞牛后进入系统，不需要初始化飞牛，直接关机制作模板。</p>
+
+<h4>Linux 启动后命令</h4>
+<p>允许在系统完成初始化后后台自动执行命令，可用于配置业务环境或更换镜像源。</p>
+<pre>bash &lt;(curl -sSL https://gitee.com/SuperManito/LinuxMirrors/raw/main/ChangeMirrors.sh) \
+  --source mirrors.aliyun.com --protocol http \
+  --install-epel true --backup false --upgrade-software false \
+  --clean-cache false --ignore-backup-tips</pre>
+
+<h3 id="s1.3.2">安装 Windows</h3>
+<h4>进入安装流程</h4>
+<p>在出现「Press any key to boot from CD or DVD」提示时，需立即按下键盘任意键进入安装流程。</p>
+
+<h4>加载 VirtIO 磁盘驱动</h4>
+<p>在「选择安装 Windows 的位置」步骤中，点击加载驱动，选择 CD 驱动器中的 <code>amd64/win11</code> 目录（Server 2022 对应 <code>2k22</code>）。</p>
+
+<h4>加载 VirtIO 网络驱动</h4>
+<p>Windows 11 需要在网络配置阶段安装网络驱动。</p>
+
+<h4>补全 VirtIO 驱动 &amp; 安装 QEMU Guest Agent</h4>
+<p>进入桌面后运行 <code>virtio-win-gt-x64.msi</code>，然后安装 Guest Agent 程序。</p>
+
+<h3 id="s1.3.3">安装 Linux</h3>
+<h4>安装 QEMU Guest Agent</h4>
+<pre># Debian/Ubuntu
+sudo apt update && sudo apt install -y qemu-guest-agent
+sudo systemctl start qemu-guest-agent
+sudo systemctl enable qemu-guest-agent
+
+# RHEL/CentOS/Fedora/Rocky
+sudo dnf install -y qemu-guest-agent
+sudo systemctl start qemu-guest-agent
+sudo systemctl enable qemu-guest-agent</pre>
+
+<hr>
+
+<h2 id="s1.4">4. 常见问题</h2>
+
+<h3 id="s1.4.1">面板问题</h3>
+<p><strong>升级后存在很多问题以及页面不匹配：</strong>大部分是浏览器缓存造成的。</p>
+<ul>
+<li>方法一：F12 → 网络选项卡 → 勾选"停用缓存" → 刷新</li>
+<li>方法二：F12 → 应用选项卡 → "清除站点数据" → 刷新</li>
+</ul>
+
+<h3 id="s1.4.2">已知报错</h3>
+<p><strong>无法载入 AppArmor 侧写：</strong>passt 包与 AppArmor 不兼容，请更新软件包：</p>
+<pre>sudo apt update && sudo apt upgrade</pre>
+
+<p><strong>获取域 xxx 元数据失败：</strong>中文系统造成命令输出差异，将系统语言改为英语后重启：</p>
+<pre>sudo dpkg-reconfigure locales
+# 选择 en_US.UTF-8
+sudo reboot</pre>
+
+<!-- ============================================================ -->
+<!-- 第二部分 -->
+<!-- ============================================================ -->
+<div id="part2" class="section-title">第二部分：功能与原理</div>
+
+<h2 id="s2.1">1. 功能与架构</h2>
+
+<h3 id="s2.1.1">虚拟化概述</h3>
+
+<h4>虚拟化类型</h4>
+<table>
+<tr><th>类型</th><th>特点</th><th>代表</th></tr>
+<tr><td>Type 1 裸金属</td><td>性能接近原生，安全性高</td><td>VMware ESXi, Hyper-V, Xen</td></tr>
+<tr><td>Type 2 宿主型</td><td>安装部署简单</td><td>VMware Workstation, VirtualBox</td></tr>
+</table>
+
+<h4>KVM/QEMU 核心组件</h4>
+<table>
+<tr><th>组件</th><th>作用</th></tr>
+<tr><td>KVM</td><td>内核虚拟化模块，利用 CPU 硬件虚拟化扩展（VT-x/AMD-V）</td></tr>
+<tr><td>QEMU</td><td>设备模拟器，模拟虚拟机的 I/O 设备</td></tr>
+<tr><td>libvirt</td><td>虚拟化管理 API</td></tr>
+</table>
+
+<h4>虚拟机生命周期状态</h4>
+<table>
+<tr><th>状态</th><th>说明</th><th>可执行操作</th></tr>
+<tr><td>创建中</td><td>正在通过任务队列创建虚拟机</td><td>无</td></tr>
+<tr><td>关机</td><td>虚拟机已停止</td><td>启动、编辑、删除、克隆</td></tr>
+<tr><td>运行</td><td>虚拟机正在运行</td><td>关机、重启、暂停、VNC</td></tr>
+<tr><td>暂停</td><td>内存状态保留</td><td>恢复、强制关机</td></tr>
+</table>
+
+<h4>QCOW2 vs RAW 格式</h4>
+<table>
+<tr><th>特性</th><th>QCOW2</th><th>RAW</th></tr>
+<tr><td>快照支持</td><td>✅ 支持</td><td>❌ 不支持</td></tr>
+<tr><td>磁盘压缩</td><td>✅ 支持</td><td>❌ 不支持</td></tr>
+<tr><td>稀疏分配</td><td>✅ 支持</td><td>❌ 需预分配</td></tr>
+<tr><td>读写性能</td><td>中等</td><td>高</td></tr>
+<tr><td>空间效率</td><td>高</td><td>低</td></tr>
+</table>
+
+<h3 id="s2.1.2">QVMConsole 架构</h3>
+
+<h4>后端技术栈</h4>
+<table>
+<tr><th>组件</th><th>技术</th></tr>
+<tr><td>Web 框架</td><td>Gin (Go)</td></tr>
+<tr><td>虚拟化 API</td><td>go-libvirt（UNIX Socket RPC）</td></tr>
+<tr><td>数据库</td><td>SQLite + GORM</td></tr>
+<tr><td>任务队列</td><td>自研，基于 goroutine + SSE</td></tr>
+<tr><td>网络虚拟化</td><td>Open vSwitch</td></tr>
+</table>
+
+<h4>前端技术栈</h4>
+<table>
+<tr><th>组件</th><th>技术</th></tr>
+<tr><td>框架</td><td>Vue.js 3</td></tr>
+<tr><td>构建工具</td><td>Vite</td></tr>
+<tr><td>状态管理</td><td>Pinia</td></tr>
+<tr><td>UI 组件库</td><td>Element Plus</td></tr>
+<tr><td>HTTP 客户端</td><td>Axios</td></tr>
+</table>
+
+<h4>中间件链</h4>
+<table>
+<tr><th>中间件</th><th>功能</th></tr>
+<tr><td>CORSMiddleware</td><td>处理跨域请求</td></tr>
+<tr><td>RateLimitMiddleware</td><td>API 请求频率控制</td></tr>
+<tr><td>AuthMiddleware</td><td>JWT/API Key 验证</td></tr>
+<tr><td>AdminMiddleware</td><td>管理员权限验证</td></tr>
+<tr><td>VMAccessMiddleware</td><td>虚拟机归属权限验证</td></tr>
+</table>
+
+<h4>任务队列</h4>
+<p>采用"生产者-消费者"模型，默认 3 个工作线程。支持的任务类型：clone、linked_clone、batch、create、reinstall、delete、snapshot、migration、import、export、template、firewall_apply 等。</p>
+
+<h4>SSE 实时推送</h4>
+<table>
+<tr><th>端点</th><th>内容</th><th>频率</th></tr>
+<tr><td>/api/vm/sse</td><td>VM 列表状态</td><td>2 秒</td></tr>
+<tr><td>/api/vm/:name/sse</td><td>单个 VM 详情</td><td>3 秒</td></tr>
+<tr><td>/api/host/stats/sse</td><td>宿主机资源</td><td>5 秒</td></tr>
+<tr><td>/api/task/sse</td><td>任务进度</td><td>实时</td></tr>
+</table>
+
+<h4>JWT 令牌类型</h4>
+<table>
+<tr><th>类型</th><th>用途</th><th>有效期</th></tr>
+<tr><td>访问令牌</td><td>常规 API 访问</td><td>较短</td></tr>
+<tr><td>引导令牌</td><td>首次登录后初始化</td><td>短</td></tr>
+<tr><td>登录验证令牌</td><td>二次验证（TOTP）</td><td>极短</td></tr>
+<tr><td>高风险令牌</td><td>敏感操作</td><td>极短</td></tr>
+</table>
+
+<h3 id="s2.1.3">虚拟机迁移</h3>
+
+<h4>迁移方式</h4>
+<table>
+<tr><th>方式</th><th>适用场景</th><th>特点</th></tr>
+<tr><td>热迁移</td><td>虚拟机运行中</td><td>业务不中断（毫秒级）</td></tr>
+<tr><td>冷迁移</td><td>虚拟机关机</td><td>直接复制磁盘文件</td></tr>
+</table>
+
+<h4>热迁移限制</h4>
+<p>当脏页速率达到平均带宽的 20%-50% 时强制启用 CPU 限制；达到 50% 时阻止热迁移。</p>
+
+<h4>迁移预检</h4>
+<p>检查项目：平均带宽、脏页速率、脏页占比、CPU 限制、磁盘检查、backing 检查、端口转发等。</p>
+
+<h4>API 接口</h4>
+<table>
+<tr><th>方法</th><th>路径</th><th>说明</th></tr>
+<tr><td>GET</td><td>/nodes/{id}/migration-options</td><td>获取迁移选项</td></tr>
+<tr><td>POST</td><td>/vm/{name}/migration/preview</td><td>迁移预检（300s）</td></tr>
+<tr><td>POST</td><td>/vm/{name}/migrate</td><td>提交整机迁移（60s）</td></tr>
+<tr><td>POST</td><td>/vm/{name}/disk/{dev}/migrate</td><td>提交硬盘迁移（60s）</td></tr>
+</table>
+
+<h3 id="s2.1.4">系统初始化原理</h3>
+
+<h4>Linux 初始化（cloud-init NoCloud）</h4>
+<ul>
+<li><strong>身份重置</strong>：清理 machine-id、DHCP 租约</li>
+<li><strong>cloud-init 配置清理</strong>：删除安装器遗留配置</li>
+<li><strong>NoCloud Seed 注入</strong>：meta-data + user-data</li>
+<li><strong>密码处理</strong>：<code>virt-customize --password</code></li>
+<li><strong>用户名重命名</strong>：离线 <code>usermod</code></li>
+</ul>
+
+<h4>Windows 初始化（CloudbaseInit + ConfigDrive）</h4>
+<ul>
+<li>使用 CloudbaseInit 配合 ConfigDrive 方式</li>
+<li>生成 Unattend.xml 跳过 OOBE 向导</li>
+<li>创建 Config Drive ISO 挂载到虚拟机</li>
+<li>通过 QEMU Guest Agent 自动弹出 CD-ROM</li>
+</ul>
+
+<h4>FnOS 初始化</h4>
+<p>通过 <code>virt-customize</code> 直接修改系统文件，不依赖 cloud-init。支持三种设备 ID 策略：自动重置、保留原始 ID、自定义 ID。</p>
+
+<h4>对比</h4>
+<table>
+<tr><th>特性</th><th>Linux</th><th>Windows</th><th>FnOS</th></tr>
+<tr><td>工具</td><td>virt-customize</td><td>virt-customize+guestfish</td><td>virt-customize</td></tr>
+<tr><td>主机名</td><td>cloud-init</td><td>CloudbaseInit</td><td>离线写入</td></tr>
+<tr><td>密码</td><td>virt-customize</td><td>CloudbaseInit</td><td>chpasswd</td></tr>
+<tr><td>磁盘扩容</td><td>growpart+LVM</td><td>ExtendVolumes</td><td>无</td></tr>
+</table>
+
+<h3 id="s2.1.5">模板管理原理</h3>
+
+<h4>模板元数据</h4>
+<p>每个模板由 <code>.qcow2</code> 磁盘文件和 <code>.meta.json</code> 元数据文件组成。字段：type、category、boot_type、template_user、cloud_init_mode、default_config、template_uid、node_id、parent_node_id 等。文件会被自动设置为不可变属性（<code>chattr +i</code>）。</p>
+
+<h4>树形结构</h4>
+<p>采用树形链式结构管理版本关系。从模板 A 克隆虚拟机再制作新模板 B 时，B 自动成为 A 的子节点。</p>
+
+<h4>克隆模式</h4>
+<table>
+<tr><th>模式</th><th>原理</th><th>优点</th><th>缺点</th></tr>
+<tr><td>链式克隆</td><td>基于模板创建差分磁盘（backing file）</td><td>毫秒级创建，节省存储</td><td>依赖模板存在</td></tr>
+<tr><td>完整克隆</td><td>完整复制模板数据</td><td>独立运行</td><td>创建较慢，占用完整空间</td></tr>
+<tr><td>原生链式克隆</td><td>直接使用模板不修改配置</td><td>最快速度</td><td>仅管理员可用</td></tr>
+</table>
+
+<h4>模板删除策略</h4>
+<ul>
+<li><strong>级联删除（cascade）</strong>：删除模板及其整棵子树</li>
+<li><strong>提升子节点（promote_children）</strong>：通过 <code>qemu-img rebase</code> 指向父模板</li>
+<li><strong>热提升子节点（promote_children_hot）</strong>：支持运行中 VM 热切换</li>
+</ul>
+
+<hr>
+
+<h2 id="s2.2">2. 虚拟机</h2>
+
+<h3 id="s2.2.1">创建方式</h3>
+<ul>
+<li><strong>ISO 镜像安装</strong>：全新部署，完全控制安装过程，多 ISO 支持</li>
+<li><strong>模板快速克隆</strong>：批量部署，秒级创建，支持链式/完整克隆</li>
+<li><strong>原生链式克隆</strong>：快速测试，不修改模板配置</li>
+<li><strong>导入已有磁盘</strong>：支持 qcow2、raw、vmdk、vhd/vhdx、img 格式自动转换</li>
+</ul>
+
+<h3 id="s2.2.2">基础配置</h3>
+<ul>
+<li><strong>命名规则</strong>：字母、数字、短横线，最大 63 字符，唯一</li>
+<li><strong>智能命名</strong>：随机生成 / 批量前缀+数字后缀</li>
+<li><strong>应用场景</strong>：Web 应用、数据库、AI/机器学习、文件存储（智能推荐）</li>
+<li><strong>系统类型</strong>：Linux、Windows、macOS、Other</li>
+<li><strong>批量创建</strong>：自动计算总资源需求，检查配额</li>
+</ul>
+
+<h3 id="s2.2.3">硬件规格</h3>
+<ul>
+<li><strong>CPU 核心</strong>：1-32 核</li>
+<li><strong>CPU 限制</strong>：基于 Linux CFS 带宽控制</li>
+<li><strong>CPU 拓扑</strong>：自动/宿主默认/自定义（插槽+核心）</li>
+<li><strong>CPU 亲和性</strong>：绑定到特定物理核心</li>
+<li><strong>动态内存</strong>：气球调度（virtio-balloon）/ 弹性内存（virtio-mem）</li>
+<li><strong>虚拟化引擎</strong>：KVM 硬件虚拟化 / QEMU 软件虚拟化（x86_64/aarch64/riscv64）</li>
+<li><strong>引导方式</strong>：BIOS / UEFI / UEFI+安全引导</li>
+<li><strong>显示设备</strong>：VirtIO / VGA / VMVGA / QXL / Cirrus</li>
+<li><strong>Watchdog</strong>：i6300esb / iTCO</li>
+</ul>
+
+<h3 id="s2.2.4">存储配置</h3>
+<ul>
+<li><strong>磁盘格式</strong>：QCOW2（动态分配、快照） / RAW（高性能）</li>
+<li><strong>驱动类型</strong>：VirtIO（推荐） / SCSI / SATA / IDE</li>
+<li><strong>系统盘</strong>：10-2000GB，OS 建议值（Linux 25G / Windows 60G）</li>
+<li><strong>额外磁盘</strong>：独立配置大小、格式、驱动、IOPS</li>
+<li><strong>IOPS 限制</strong>：基于令牌桶算法，支持总 IOPS 或读写分离</li>
+<li><strong>ISO 管理</strong>：多 ISO 挂载，光驱热插拔</li>
+</ul>
+
+<h3 id="s2.2.5">网络配置</h3>
+<ul>
+<li><strong>网卡类型</strong>：VirtIO（推荐） / e1000e / rtl8139</li>
+<li><strong>VPC 网络</strong>：交换机 + DHCP + NAT 网关 + 安全组</li>
+<li><strong>安全组</strong>：入站/出站规则，TCP/UDP/ICMP，CIDR/交换机/安全组目标</li>
+<li><strong>流量管控</strong>：带宽限制 + 流量配额 + 端口转发</li>
+<li><strong>网络诊断</strong>：连通性、DNS、端口、路由追踪、带宽测试</li>
+</ul>
+
+<h3 id="s2.2.6">系统配置</h3>
+<ul>
+<li><strong>引导顺序</strong>：硬盘/光驱/网络/USB，支持拖拽排序</li>
+<li><strong>开机自启</strong>：宿主机启动时自动启动，支持顺序控制</li>
+<li><strong>热修改</strong>：CPU 核心数和内存支持热插拔</li>
+<li><strong>监控指标</strong>：CPU、内存、磁盘 I/O、网络流量、运行时间</li>
+</ul>
+
+<h3 id="s2.2.7">高级设置</h3>
+<ul>
+<li><strong>开发者选项</strong>：CPU 冻结、APIC、PAE</li>
+<li><strong>RTC 时钟</strong>：UTC/本地时间/自定义偏移，起始日期</li>
+<li><strong>QEMU Guest Agent</strong>：文件系统冻结/解冻、网络信息、密码设置</li>
+<li><strong>动态内存后端</strong>：气球调度 vs 弹性内存</li>
+<li><strong>SMBIOS</strong>：制造商、产品名称、序列号、UUID</li>
+<li><strong>Domain XML 编辑</strong>：管理员完全编辑权限</li>
+<li><strong>首次重启模式</strong>：正常重启 / 宿主冷启动（解决 Sysprep 黑屏）</li>
+</ul>
+
+<h3 id="s2.2.8">硬件直通</h3>
+<ul>
+<li><strong>支持设备</strong>：GPU（消费级/专业/计算）、NVMe 硬盘、网卡</li>
+<li><strong>VFIO</strong>：将设备绑定到 vfio-pci 驱动</li>
+<li><strong>前置条件</strong>：IOMMU 支持、独立 IOMMU 组、VT-d/AMD-Vi</li>
+<li><strong>NVIDIA 特殊处理</strong>：自动配置隐藏虚拟化参数（解决 Error 43）</li>
+</ul>
+
+<h3 id="s2.2.9">快照管理</h3>
+<table>
+<tr><th>特性</th><th>内部快照</th><th>外部快照</th></tr>
+<tr><td>存储方式</td><td>保存在原磁盘文件</td><td>创建 overlay 磁盘文件</td></tr>
+<tr><td>恢复速度</td><td>快（virsh snapshot-revert）</td><td>慢（需合并 overlay）</td></tr>
+<tr><td>适用场景</td><td>关机状态、少量快照</td><td>运行中、频繁快照</td></tr>
+</table>
+<ul>
+<li><strong>配额</strong>：管理员无限制，普通用户按配置限制</li>
+<li><strong>NVRAM 兼容</strong>：自动检测 UEFI pflash 格式，支持自动修复</li>
+</ul>
+
+<h3 id="s2.2.10">磁盘迁移与扩容</h3>
+<ul>
+<li><strong>本机磁盘迁移</strong>：热迁移（<code>virsh blockcopy</code>） / 冷迁移（稀疏复制+rebase）</li>
+<li><strong>链式磁盘处理</strong>：预创建 overlay → blockcopy --pivot / 修正 backing 路径</li>
+<li><strong>离线磁盘扩容</strong>：FnOS（ext: resize2fs） / Windows（NTFS: ntfsresize）</li>
+<li><strong>恢复分区处理</strong>：备份→删除→扩展→重新创建→恢复→修复</li>
+</ul>
+
+<hr>
+
+<h2 id="s2.3">3. 网络</h2>
+
+<h3 id="s2.3.1">网络概览</h3>
+<ul>
+<li>OVS 状态检测（运行正常/需要关注）</li>
+<li>宿主机网桥管理（OVS / Linux 桥接）</li>
+<li>物理网卡列表（名称、状态、MAC、IP、默认路由）</li>
+<li>OVS 端口列表（端口名、ofport、类型、关联 VM、IP）</li>
+<li>一键检测与修复</li>
+</ul>
+
+<h3 id="s2.3.2">VPC 交换机</h3>
+<table>
+<tr><th>配置项</th><th>说明</th></tr>
+<tr><td>名称</td><td>唯一标识名称</td></tr>
+<tr><td>目标网桥</td><td>绑定的 OVS 网桥（默认 br-ovs）</td></tr>
+<tr><td>VLAN ID</td><td>1-4094，用于网络隔离</td></tr>
+<tr><td>安全策略</td><td>allow_promiscuous / allow_mac_change / allow_forged_transmits</td></tr>
+<tr><td>流量配额</td><td>月下行/上行流量（GB），下行/上行带宽（Mbps）</td></tr>
+</table>
+<p><strong>安全策略技术原理：</strong>通过 OpenFlow 规则控制杂模式（no-flood/flood）、MAC 地址过滤（priority 90/85）、防伪传输。</p>
+
+<h3 id="s2.3.3">安全组策略</h3>
+<ul>
+<li><strong>方向</strong>：入站（ingress）/ 出站（egress）</li>
+<li><strong>协议</strong>：TCP / UDP / ICMP / 全部</li>
+<li><strong>目标类型</strong>：CIDR / 交换机 / 安全组</li>
+<li><strong>底层</strong>：nftables 表 <code>kvm_console_vpc_acl</code>，ingress/egress 链</li>
+<li><strong>规则叠加</strong>：多个安全组规则叠加生效（入站/出站各取并集）</li>
+</ul>
+
+<h3 id="s2.3.4">端口转发</h3>
+<ul>
+<li>基于 iptables DNAT/SNAT 规则</li>
+<li>支持 TCP / UDP / both</li>
+<li>自动生成完整访问地址（<code>tcp://IP:port</code>）</li>
+<li>TCP 探测验证连通性</li>
+<li>入站区域限制（继承全局/不受限制）</li>
+<li>用户白名单 + VM 白名单 + 建站探测</li>
+</ul>
+
+<h3 id="s2.3.5">ACL 管理</h3>
+<ul>
+<li>ACL 预览：查看所有安全组生成的 nftables 规则</li>
+<li>ACL 应用：加载到 <code>kvm_console_vpc_acl</code> 表</li>
+<li>规则模板、备份与恢复、规则监控</li>
+</ul>
+
+<hr>
+
+<h2 id="s2.4">4. 公网 IP</h2>
+
+<h4>三种绑定模式</h4>
+<table>
+<tr><th>模式</th><th>实现</th><th>VM 内配置</th></tr>
+<tr><td>1:1 NAT（推荐）</td><td>iptables DNAT/SNAT 映射</td><td>保持私网 IP</td></tr>
+<tr><td>经典网络-路由</td><td>路由表项直接路由</td><td>需配置公网 IP</td></tr>
+<tr><td>经典网络-桥接</td><td>OVS 网桥二层直通</td><td>需配置公网 IP</td></tr>
+</table>
+
+<h4>关键功能</h4>
+<ul>
+<li>规则预览与试算</li>
+<li>迁移公网 IP（原子性绑定关系更新）</li>
+<li>防伪造机制（OVS OpenFlow 流表规则）</li>
+<li>规则持久化：<code>/etc/kvm-console/public-ip/rules.sh</code></li>
+<li>配额管理（管理员无限制）</li>
+<li>所有操作通过任务队列异步执行 + 高风险二次验证</li>
+</ul>
+
+<hr>
+
+<h2 id="s2.5">5. 防火墙</h2>
+
+<h3 id="s2.5.1">宿主机防火墙</h3>
+<ul>
+<li>基于 UFW，管控宿主机入站端口</li>
+<li>自动保护 SSH 和面板端口（不可删除）</li>
+<li>Docker 兼容（不写入 Docker 链，保持转发 allow）</li>
+<li>端口转发联动：新增端口转发自动写入 UFW 放通规则</li>
+<li>规则来源标识：<code>kvm-console:protected</code> / <code>kvm-console:port-forward</code></li>
+</ul>
+
+<h3 id="s2.5.2">KVM 网络防火墙</h3>
+<ul>
+<li>独立 nftables 表 <code>kvm_console_fw</code>，仅管控 VM 转发流量</li>
+<li>全局策略：虚拟网桥、虚拟机网段、出站/入站区域限制</li>
+<li>GeoIP 区域数据（IPdeny）+ 本地导入 + 在线更新</li>
+<li>VM 覆盖策略：继承全局/关闭管控/仅允许入站/仅允许区域/阻断区域</li>
+<li>白名单优先级最高，默认包含内网保留地址段</li>
+<li>紧急回滚：<code>nft delete table inet kvm_console_fw</code></li>
+</ul>
+
+<h3 id="s2.5.3">连接管理</h3>
+<ul>
+<li>基于 <code>ss -Htn state established</code> 获取 TCP 连接</li>
+<li>两种模式：非防火墙端口连接 / 全部连接</li>
+<li>先预览再确认的安全流程</li>
+<li>基于 UFW allow 规则的端口放行判断</li>
+</ul>
+
+<hr>
+
+<h2 id="s2.6">6. 存储池</h2>
+<ul>
+<li><strong>管理员专属</strong>（路由 <code>/storage-pool/list</code>）</li>
+<li><strong>概览统计</strong>：总容量、已用空间、可用空间、存储池数量</li>
+<li><strong>磁盘分组卡片</strong>：物理硬盘信息（device_path、type、model、size）</li>
+<li><strong>状态标签</strong>：默认、已启用、LVM、可用于虚拟机</li>
+<li><strong>操作</strong>：配置、设为默认、格式化挂载（危险操作）</li>
+</ul>
+
+<hr>
+
+<h2 id="s2.7">7. 节点管理</h2>
+<ul>
+<li><strong>管理员专属</strong>（路由 <code>/nodes</code>）</li>
+<li><strong>节点信息</strong>：名称、面板地址、SSH 信息、状态（在线/异常/未知）</li>
+<li><strong>连通性探测</strong>：9 项环境检查（virsh、qemu-img、rsync、ssh、OVS 等），120s 超时</li>
+<li><strong>认证</strong>：API ID + API Key（AES-GCM 加密存储），SSH 用户名+密码</li>
+<li><strong>热迁移原理</strong>：预检→内存传输→脏页同步→最终切换→恢复运行</li>
+<li><strong>冷迁移原理</strong>：停止→复制磁盘→传输配置→更新定义→清理源节点</li>
+</ul>
+
+<hr>
+
+<h2 id="s2.8">8. 我的存储</h2>
+<ul>
+<li><strong>用户个人存储</strong>（路由 <code>/my-storage</code>，轻量云用户除外）</li>
+<li><strong>存储类别</strong>：ISO 镜像、文件共享、虚拟磁盘</li>
+<li><strong>挂载协议</strong>：9p VirtFS（<code>mount -t 9p -o trans=virtio,version=9p2000.L</code>）</li>
+<li><strong>支持的磁盘格式</strong>：QCOW2、RAW、VMDK、VHD、VHDX、IMG</li>
+<li><strong>访问模式</strong>：只读（RO） / 读写（RW）</li>
+<li><strong>配额监控</strong>：绿（0-70%）/ 黄（70-90%）/ 红（90-100%）/ 超限只读</li>
+</ul>
+
+<hr>
+
+<h2 id="s2.9">9. 用户管理</h2>
+
+<h4>用户类型</h4>
+<table>
+<tr><th>类型</th><th>标识</th><th>特点</th></tr>
+<tr><td>弹性云用户</td><td>elastic</td><td>多台 VM，资源灵活调度</td></tr>
+<tr><td>轻量云用户</td><td>lightweight</td><td>单台 VM 专属，资源独立隔离</td></tr>
+</table>
+
+<h4>状态机</h4>
+<p>待激活 → 正常 → 已封禁</p>
+
+<h4>配额项</h4>
+<p>CPU、内存、磁盘、VM 数量、快照数量、端口转发、公网 IP、存储配额、运行时长、下行/上行流量、下行/上行带宽</p>
+
+<h4>安全认证</h4>
+<ul>
+<li><strong>TOTP 2FA</strong>：基于 HMAC-SHA1，30 秒有效期</li>
+<li><strong>邮箱验证码</strong>：TOTP 备选方案</li>
+<li><strong>首次登录安全初始化</strong>：SMTP 配置 → 绑定邮箱 → 绑定 2FA</li>
+<li><strong>高风险操作验证</strong>：绑定/解绑公网 IP、迁移、删除资源等</li>
+</ul>
+
+<h4>封禁级联操作</h4>
+<ol>
+<li>关闭所有运行中 VM</li>
+<li>禁用 SSH（防火墙规则）</li>
+<li>更新状态为已封禁</li>
+<li>记录日志（"尽力而为"策略）</li>
+</ol>
+
+<hr>
+
+<h2 id="s2.10">10. 调度事件</h2>
+
+<h4>路由与权限</h4>
+<table>
+<tr><th>功能</th><th>路由</th><th>权限</th></tr>
+<tr><td>全局调度事件</td><td>/scheduler/events</td><td>管理员</td></tr>
+<tr><td>异步任务中心</td><td>/task/recent</td><td>所有用户</td></tr>
+<tr><td>VM 定时任务</td><td>嵌入 VM 详情页</td><td>VM 所有者</td></tr>
+</table>
+
+<h4>调度器概览</h4>
+<p>卡片列表展示所有注册调度器：名称、标识、分组、描述、启用状态、最近事件时间。</p>
+
+<h4>VM 定时任务</h4>
+<p>事件类型：电源事件（定时开机/关机）、虚拟机事件（删除 VM）。计划类型：一次性/每天/每周。</p>
+
+<h4>异步任务中心</h4>
+<p>20+ 种任务类型，状态：pending → running → success/failed/canceled。SSE 实时推送进度。</p>
+
+<hr>
+
+<h2 id="s2.11">11. 系统设置</h2>
+
+<h4>基础设置</h4>
+<ul>
+<li>站点展示（网站标题、访问链接）</li>
+<li>端口自动分配范围（1024-65535）</li>
+</ul>
+
+<h4>存储与网络</h4>
+<ul>
+<li><strong>存储路径</strong>：模板目录、克隆目录、ISO 存放位置、端口转发持久化目录</li>
+<li><strong>网络</strong>：OVS 网桥、DHCP 范围、外网网卡、公网 IP</li>
+<li><strong>全局带宽限制</strong>：下行/上行总带宽（0-100000 Mbps）</li>
+<li><strong>默认磁盘 IOPS</strong></li>
+</ul>
+
+<h4>宿主机设置</h4>
+<table>
+<tr><th>功能</th><th>挡位</th></tr>
+<tr><td>KSM 内存去重</td><td>关闭/保守/均衡/积极/极致</td></tr>
+<tr><td>zRAM 压缩内存</td><td>关闭/保守/均衡/积极/极致</td></tr>
+<tr><td>KVM Unrestricted Guest</td><td>启用/禁用（VMware 嵌套兼容）</td></tr>
+</table>
+
+<h4>调度与高级</h4>
+<ul>
+<li><strong>动态内存调度</strong>：调度间隔、冷却时间、宿主保留内存、增长/回收阈值</li>
+<li><strong>端口转发 HTTP 探测</strong>：自动封禁未命中白名单的 HTTP 服务</li>
+<li><strong>批量克隆</strong>：最大并发数（1-100）</li>
+<li><strong>救援系统</strong>：选择 ISO 用于紧急恢复</li>
+<li><strong>CPU 亲和性预设</strong></li>
+</ul>
+
+<h4>安全与维护</h4>
+<ul>
+<li><strong>SMTP 邮件</strong>：主机、端口、用户名、密码（加密存储）、发件人、加密方式</li>
+<li><strong>开发环境模式</strong>：绕过安全验证（仅开发用）</li>
+<li><strong>维护模式</strong>：异步关闭所有 VM，停用宿主机服务（保留面板）</li>
+</ul>
+
+<hr>
+
+<p style="color:var(--text2);text-align:center;padding:10px 0;">📥 上次同步: 2026-06-23 11:47:09 · 共抓取 41 个页面</p><p style="color:var(--text2); text-align:center; padding:40px 0;">
+QVMConsole 文档手册 · 基于 KVM/QEMU 构建的轻量级虚拟机管理面板<br>
+文档生成: 2026-06-23 · 已同步 41 页 · 来源: <a href="https://qvmcdocs.xiaozhuhouses.asia/">qvmcdocs.xiaozhuhouses.asia</a>
+</p>
+
+<!-- Sync Modal -->
+<div class="modal-overlay" id="syncModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeSyncModal()">&times;</button>
+    <h3 id="syncModalTitle">🔄 同步线上文档</h3>
+    <div id="syncStatus"></div>
+    <div id="syncInstructions">
+      <p>浏览器安全策略（CORS）阻止了网页直接抓取线上内容，请使用以下任一方式同步：</p>
+      <p><strong>方式一：本地服务打开（推荐）</strong></p>
+      <ol>
+        <li>打开终端进入此文件所在目录</li>
+        <li>运行 <code>python3 -m http.server 8080</code></li>
+        <li>浏览器访问 <code>http://localhost:8080/QVMConsole_文档手册.html</code></li>
+        <li>回到本页点击「同步线上最新文档」即可</li>
+      </ol>
+      <p><strong>方式二：使用同步脚本（命令行）</strong></p>
+      <ol>
+        <li>在文件目录下运行 <code>python3 sync_qvmc_docs.py</code></li>
+        <li>脚本会自动抓取线上内容并更新本 HTML 文件</li>
+      </ol>
+      <p style="color:var(--accent3);font-size:13px;">💡 方式一需要保持终端运行，推荐需要经常同步时使用。</p>
+    </div>
+    <div id="syncDone" style="display:none;">
+      <p style="color:var(--accent2);">✅ 同步完成！页面将在 3 秒后自动刷新。</p>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// Highlight active section in sidebar
+const links = document.querySelectorAll('.sidebar a');
+const sections = [];
+links.forEach(a => {
+  const href = a.getAttribute('href');
+  if (href && href.startsWith('#')) {
+    const el = document.getElementById(href.substring(1));
+    if (el) sections.push({ el, link: a });
+  }
+});
+function updateActive() {
+  let current = '';
+  for (const s of sections) {
+    const rect = s.el.getBoundingClientRect();
+    if (rect.top <= 120) current = s.link;
+  }
+  links.forEach(a => a.classList.remove('active'));
+  if (current) current.classList.add('active');
+}
+window.addEventListener('scroll', updateActive);
+updateActive();
+
+// Sync functionality
+const SYNC_PAGES = [
+  '/', '/docs/install/', '/docs/install/sponsorship',
+  '/docs/install/common-questions/panel-issues', '/docs/install/common-questions/known-errors',
+  '/docs/install/quick-start/infrastructure-config', '/docs/install/quick-start/template-management',
+  '/docs/install/advanced/create-template', '/docs/install/advanced/install-windows', '/docs/install/advanced/install-linux',
+  '/docs/tech/', '/docs/tech/feature-analysis/virtualization-overview',
+  '/docs/tech/feature-analysis/qvmconsole-architecture', '/docs/tech/feature-analysis/vm-migration',
+  '/docs/tech/feature-analysis/system-initialization', '/docs/tech/feature-analysis/template-management',
+  '/docs/tech/virtual-machine/creation-modes', '/docs/tech/virtual-machine/basic-config',
+  '/docs/tech/virtual-machine/hardware-spec', '/docs/tech/virtual-machine/storage-config',
+  '/docs/tech/virtual-machine/network-config', '/docs/tech/virtual-machine/system-config',
+  '/docs/tech/virtual-machine/advanced-settings', '/docs/tech/virtual-machine/hardware-passthrough',
+  '/docs/tech/virtual-machine/snapshot-management', '/docs/tech/virtual-machine/disk-migration-expansion',
+  '/docs/tech/network/overview', '/docs/tech/network/vpc-switch',
+  '/docs/tech/network/security-group', '/docs/tech/network/port-forward', '/docs/tech/network/acl',
+  '/docs/tech/public-ip/public-ip-management',
+  '/docs/tech/firewall/host-firewall', '/docs/tech/firewall/kvm-firewall', '/docs/tech/firewall/connection-mgmt',
+  '/docs/tech/storage-pool/storage-pool-management', '/docs/tech/node-manage/node-management',
+  '/docs/tech/my-storage/my-storage-management', '/docs/tech/user-manage/user-management',
+  '/docs/tech/scheduler/scheduler-events', '/docs/tech/system-settings/'
+];
+const BASE = 'https://qvmcdocs.xiaozhuhouses.asia';
+
+function showStatus(msg, type) {
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-status ' + type;
+  el.textContent = msg;
+}
+
+function closeSyncModal() {
+  document.getElementById('syncModal').classList.remove('show');
+}
+
+async function testFetch(url) {
+  try {
+    const resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    return resp.ok;
+  } catch { return false; }
+}
+
+async function startSync() {
+  const btn = document.getElementById('syncBtn');
+  const modal = document.getElementById('syncModal');
+  const instructions = document.getElementById('syncInstructions');
+  const done = document.getElementById('syncDone');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  showStatus('', '');
+  instructions.style.display = 'none';
+  done.style.display = 'none';
+  modal.classList.add('show');
+
+  const ok = await testFetch(BASE + '/');
+  if (!ok) {
+    instructions.style.display = 'block';
+    showStatus('⚠️ 无法直接访问线上文档，请选择下方方式同步', 'error');
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    return;
+  }
+
+  showStatus('📥 正在获取线上文档内容（约 40 页）...', 'info');
+  let allContent = {};
+  let failCount = 0;
+  for (let i = 0; i < SYNC_PAGES.length; i++) {
+    try {
+      const resp = await fetch(BASE + SYNC_PAGES[i], { signal: AbortSignal.timeout(15000) });
+      if (resp.ok) allContent[SYNC_PAGES[i]] = await resp.text();
+      else failCount++;
+    } catch { failCount++; }
+    showStatus(`📥 正在获取 (${i+1}/${SYNC_PAGES.length})...`, 'info');
+  }
+
+  if (Object.keys(allContent).length === 0) {
+    showStatus('❌ 获取失败，请检查网络后重试', 'error');
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    return;
+  }
+
+  // Store fetched content into localStorage so the Python script can pick it up,
+  // and also offer a JSON download for manual use
+  const cacheData = {
+    timestamp: new Date().toISOString(),
+    pages: allContent,
+    count: Object.keys(allContent).length
+  };
+  localStorage.setItem('qvmc_sync_cache', JSON.stringify(cacheData));
+
+  // Download the cache as JSON for offline processing
+  const blob = new Blob([JSON.stringify(cacheData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'qvmc_sync_cache.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  instructions.style.display = 'block';
+  instructions.innerHTML = `
+    <p style="color:var(--accent2);font-size:15px;font-weight:600;">✅ 已成功抓取 ${cacheData.count} 个页面！</p>
+    <p>已自动下载 <code>qvmc_sync_cache.json</code> 数据文件。</p>
+    <p><strong>应用更新：</strong></p>
+    <ol>
+      <li>将 <code>qvmc_sync_cache.json</code> 放到本 HTML 同目录</li>
+      <li>运行同步脚本：<code>python3 sync_qvmc_docs.py</code></li>
+      <li>脚本会自动用新内容替换本文档</li>
+    </ol>
+    <p style="color:var(--text2);font-size:13px;">💡 缓存已存入浏览器 localStorage，刷新页面前有效。</p>
+  `;
+  showStatus('', '');
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>

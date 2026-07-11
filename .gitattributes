@@ -1,0 +1,31 @@
+# 自动检测文本文件并确保 LF 换行符
+* text=auto eol=lf
+
+# 强制文本文件使用 LF
+*.go text eol=lf
+*.js text eol=lf
+*.vue text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+
+# 二进制文件不做转换
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

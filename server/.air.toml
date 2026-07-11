@@ -1,0 +1,26 @@
+# air 热重载配置
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/kvm-console ."
+  bin = "./tmp/kvm-console"
+  # 监听文件变化
+  include_ext = ["go"]
+  exclude_dir = ["tmp", "vendor"]
+  # 延迟构建（毫秒）
+  delay = 1000
+  # 构建失败后停止旧进程
+  stop_on_error = true
+  # 发送中断信号
+  send_interrupt = true
+  kill_delay = 500
+
+[log]
+  time = true
+
+[color]
+  main = "green"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "magenta"

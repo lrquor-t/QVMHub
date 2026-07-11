@@ -1,0 +1,234 @@
+name: 构建 Linux 发行包
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '发布版本号 (例如: 1.0.0)'
+        required: true
+        type: string
+      build_platforms:
+        description: '选择构建平台'
+        required: true
+        type: choice
+        default: 'amd64,arm64'
+        options:
+          - amd64,arm64
+          - amd64
+          - arm64
+      artifact_storage:
+        description: '构建产物存储位置'
+        required: true
+        type: choice
+        default: 'github'
+        options:
+          - github
+          - aliyun-oss
+      create_release:
+        description: '是否创建 GitHub Release'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: 构建 Linux amd64
+    if: contains(inputs.build_platforms, 'amd64')
+    runs-on: ubuntu-latest
+
+    steps:
+      # ==================== 检出代码 ====================
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # ==================== 设置 Node.js ====================
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      # ==================== 设置 Go ====================
+      - name: 设置 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      # ==================== 安装 zig（兼容旧版 glibc，例如 Kylin V10） ====================
+      - name: 安装 zig
+        run: |
+          curl -fsSL https://ziglang.org/download/0.14.0/zig-linux-x86_64-0.14.0.tar.xz | sudo tar xJ -C /usr/local
+          sudo ln -sf /usr/local/zig-linux-x86_64-0.14.0/zig /usr/local/bin/zig
+          zig version
+
+      # ==================== 使用 build.sh 构建 ====================
+      - name: 执行构建脚本 (build.sh)
+        run: |
+          bash build.sh -v "${{ inputs.version }}"
+
+      # ==================== GitHub Artifacts 上传 ====================
+      - name: 上传构建产物 (GitHub)
+        if: inputs.artifact_storage == 'github'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kvm-console-linux-amd64
+          path: release/kvm-console-linux-amd64.tar.gz
+
+      # ==================== 阿里云 OSS 上传 ====================
+      - name: 安装阿里云 ossutil
+        if: inputs.artifact_storage == 'aliyun-oss'
+        run: |
+          curl https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+          ossutil --version
+
+      - name: 配置阿里云 OSS 凭证
+        if: inputs.artifact_storage == 'aliyun-oss'
+        run: |
+          ossutil config \
+            --endpoint ${{ secrets.ALIYUN_OSS_ENDPOINT }} \
+            --access-key-id ${{ secrets.ALIYUN_OSS_ACCESS_KEY_ID }} \
+            --access-key-secret ${{ secrets.ALIYUN_OSS_ACCESS_KEY_SECRET }}
+
+      - name: 上传构建产物到阿里云 OSS
+        if: inputs.artifact_storage == 'aliyun-oss'
+        run: |
+          VERSION="${{ inputs.version }}"
+          BUCKET="${{ secrets.ALIYUN_OSS_BUCKET }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+          OSS_PATH="oss://${BUCKET}/${REPO_NAME}/v${VERSION}"
+
+          echo "======================================"
+          echo "上传目标: ${OSS_PATH}"
+          echo "======================================"
+
+          ossutil cp release/kvm-console-linux-amd64.tar.gz ${OSS_PATH}/kvm-console-linux-amd64.tar.gz -f
+
+          echo "======================================"
+          echo "构建产物已上传至阿里云 OSS"
+          echo "======================================"
+
+          echo "已上传文件列表:"
+          ossutil ls ${OSS_PATH}/
+
+  # ==================== ARM64 架构构建 ====================
+  build-arm64:
+    name: 构建 Linux arm64
+    if: contains(inputs.build_platforms, 'arm64')
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      # ==================== 检出代码 ====================
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # ==================== 设置 Node.js ====================
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      # ==================== 设置 Go ====================
+      - name: 设置 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      # ==================== 安装 zig（兼容旧版 glibc，例如 Kylin V10） ====================
+      - name: 安装 zig
+        run: |
+          curl -fsSL https://ziglang.org/download/0.14.0/zig-linux-aarch64-0.14.0.tar.xz | sudo tar xJ -C /usr/local
+          sudo ln -sf /usr/local/zig-linux-aarch64-0.14.0/zig /usr/local/bin/zig
+          zig version
+
+      # ==================== 使用 build.sh 构建 ====================
+      - name: 执行构建脚本 (build.sh)
+        run: |
+          bash build.sh -v "${{ inputs.version }}"
+
+      # ==================== GitHub Artifacts 上传 ====================
+      - name: 上传构建产物 (GitHub)
+        if: inputs.artifact_storage == 'github'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kvm-console-linux-arm64
+          path: release/kvm-console-linux-arm64.tar.gz
+
+      # ==================== 阿里云 OSS 上传 ====================
+      - name: 安装阿里云 ossutil
+        if: inputs.artifact_storage == 'aliyun-oss'
+        run: |
+          curl https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+          ossutil --version
+
+      - name: 配置阿里云 OSS 凭证
+        if: inputs.artifact_storage == 'aliyun-oss'
+        run: |
+          ossutil config \
+            --endpoint ${{ secrets.ALIYUN_OSS_ENDPOINT }} \
+            --access-key-id ${{ secrets.ALIYUN_OSS_ACCESS_KEY_ID }} \
+            --access-key-secret ${{ secrets.ALIYUN_OSS_ACCESS_KEY_SECRET }}
+
+      - name: 上传构建产物到阿里云 OSS
+        if: inputs.artifact_storage == 'aliyun-oss'
+        run: |
+          VERSION="${{ inputs.version }}"
+          BUCKET="${{ secrets.ALIYUN_OSS_BUCKET }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+          OSS_PATH="oss://${BUCKET}/${REPO_NAME}/v${VERSION}"
+
+          echo "======================================"
+          echo "上传目标: ${OSS_PATH}"
+          echo "======================================"
+
+          ossutil cp release/kvm-console-linux-arm64.tar.gz ${OSS_PATH}/kvm-console-linux-arm64.tar.gz -f
+
+          echo "======================================"
+          echo "构建产物已上传至阿里云 OSS"
+          echo "======================================"
+
+          echo "已上传文件列表:"
+          ossutil ls ${OSS_PATH}/
+
+  # ==================== GitHub Release 统一发布 ====================
+  # 独立 job：等待 amd64/arm64 并行构建全部完成，统一下载产物并创建 Release
+  release:
+    name: 创建 GitHub Release
+    needs: [build, build-arm64]
+    if: always() && !cancelled() && inputs.create_release && inputs.artifact_storage == 'github'
+    runs-on: ubuntu-latest
+
+    steps:
+      # ==================== 下载 AMD64 产物 ====================
+      - name: 下载 AMD64 产物
+        if: needs.build.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: kvm-console-linux-amd64
+          path: release-artifacts
+
+      # ==================== 下载 ARM64 产物 ====================
+      - name: 下载 ARM64 产物
+        if: needs.build-arm64.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: kvm-console-linux-arm64
+          path: release-artifacts
+
+      # ==================== 创建 GitHub Release ====================
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          files: release-artifacts/*.tar.gz
+          generate_release_notes: true
+          draft: false
+          prerelease: false

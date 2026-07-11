@@ -1,0 +1,47 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+server/data
+
+node_modules
+dist
+dist-ssr
+*.local
+.vscode
+scripts/
+.trae/
+
+# Editor directories and files
+.vscode/*
+
+# Build artifacts
+release/
+bundled/
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.exe
+*.test
+kvm-console-linux-amd64
+kvm-console
+kvm-console.exe
+kvm_console
+server/tmp/
+release/
+docs-web
+tmp/
+.qoder/
+docs/
+server/.env
+server/**/*.env
+.claude/
