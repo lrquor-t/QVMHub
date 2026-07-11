@@ -11,7 +11,7 @@
 #   服务:     qvmhub.service (systemd，以 qvmhub 用户运行)
 #
 # 用法:
-#   ./install.sh                       安装/更新（交互，默认端口 8080）
+#   ./install.sh                       安装/更新（交互，默认端口 8088）
 #   ./install.sh install -y            非交互安装
 #   ./install.sh install --port 9000   指定端口
 #   ./install.sh uninstall             卸载（保留数据/配置）
@@ -39,7 +39,7 @@ SERVICE_USER="qvmhub"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DEFAULT_PORT=8080
+DEFAULT_PORT=8088
 
 # ==================== 参数解析 ====================
 ACTION="install"

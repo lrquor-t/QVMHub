@@ -1,166 +1,181 @@
-# QVMConsole - 开源虚拟机管理控制台
+# QVMHub - 多节点 QVMConsole 管控网关
 
 <div align="center">
 
-<img width="2403" height="1257" alt="sudbsi" src="https://github.com/user-attachments/assets/965011d7-9cf3-4ef4-b39e-7b22fe99a1c8" />
+<img width="2403" height="1257" alt="QVMHub" src="https://github.com/user-attachments/assets/965011d7-9cf3-4ef4-b39e-7b22fe99a1c8" />
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/qvmconsole/qvmconsole?style=social)](https://github.com/qvmconsole/qvmconsole)
-[![GitHub Forks](https://img.shields.io/github/forks/qvmconsole/qvmconsole?style=social)](https://github.com/qvmconsole/qvmconsole)
-[![GitHub Issues](https://img.shields.io/github/issues/qvmconsole/qvmconsole)](https://github.com/qvmconsole/qvmconsole/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/qvmconsole/qvmconsole)](https://github.com/qvmconsole/qvmconsole/pulls)
 
-[**官方网站**](https://www.qvmconsole.cn/) | [**文档站点**](https://qvmcdocs.xiaozhuhouses.asia/) | [**部署指南**](https://qvmcdocs.xiaozhuhouses.asia/docs/install/)
+**GitHub:** https://github.com/lrquor-t/QVMHub &nbsp;_(仓库即将公开)_
 
 </div>
 
-## 本仓库说明（二次开发 / Fork）
+> QVMHub 是一个**纯 HTTP 控制器**:它把多台分散部署的 [QVMConsole](https://github.com/QVMConsole/QVMConsole) 节点统一接入，提供一个 Web 入口、一套账户与权限、一张总览大屏，所有针对虚拟机的操作都由 QVMHub **反向代理透传**到对应节点的原生 API 执行。
 
-> 本仓库基于上游开源项目 **QVMConsole** 进行二次开发。
-> **上游来源**：https://github.com/QVMConsole/QVMConsole
+## 它解决什么问题
 
-以下为在本 fork 中**新增或增强**的功能；上游原有能力（虚拟机生命周期、VPC 网络与安全组、存储池 / 模板 / 快照 / 克隆、多租户配额、Web 控制台与 RESTful API 等）请参阅本 README 其余部分及上游仓库。
+每台宿主机上运行的 QVMConsole 本身就是一个完整的虚拟机管理控制台。当你的 QVMConsole 节点不止一台（多台宿主机、多个机房、多套环境）时，逐个登录每个节点去操作、看监控、管账号会非常割裂。
 
-### 新增功能
+QVMHub 在这些节点**之上**加一层网关：
 
-**LXC 容器管理子系统** —— 与虚拟机并列的独立容器子系统（原生 lxc-tools，不经 libvirt）：
+- **一个入口** 管理所有节点，按节点切换上下文；
+- **一套账户** 统一登录、角色权限（RBAC）、API Key、2FA；
+- **一张大屏** 聚合各节点健康度与资源用量；
+- **一条通道** 把浏览器的每一个操作请求透传到目标节点，包括 VNC / LXC 终端 / SSE 长任务流。
 
-- **生命周期**：4 步创建向导（来源 / 基本配置 / 网络 / 确认），支持「模板克隆」与「镜像下载」两种来源；开机 / 关机 / 重启 / 删除，以及**批量创建**（`prefix-NN` 并发克隆、部分成功、可取消）。
-- **模板管理**：导入 rootfs tarball（`.tar` / `.tar.gz` / `.tar.xz`，分片上传 + 内容探测回填）或主机绝对路径；从运行中容器一键制作模板；模板设置（显示名 / 描述 / 克隆可见 / 禁用 / 创建后命令）。
-- **网络**：多网卡增删改（VPC 交换机 / 安全组），主网卡可绑定静态 IP。
-- **快照与克隆**：zfs / dir 双分支快照（带备注）、从快照克隆容器、被克隆的快照禁删保护。
-- **监控**：CPU / 内存 / 网络 / 磁盘用量的实时与历史图表。
-- **定时任务**：定时启动 / 停止 / 删除（once / daily 等），并入调度事件中心。
-- **Web 终端**：基于 lxc-attach 的浏览器终端。
+## QVMHub 与 QVMConsole 的关系
 
-**ZFS 存储管理（新增）**：在上游既有存储池（格式化 / 分区 / LVM）之外，新增 ZFS 作为一等存储后端（亦用作 LXC 容器的 zfs 后端，支持 CoW 克隆 / refquota 配额 / 原生快照）：
+| | QVMConsole（节点） | QVMHub（控制器） |
+|---|---|---|
+| 角色 | 单节点虚拟机管理控制台 | 多节点中央管控网关 |
+| 是否操作虚拟化 | 是，直接调用 libvirt / KVM | 否，自身**不跑虚拟化**，纯 HTTP |
+| 部署位置 | 每台宿主机一台 | 任一台可联网服务器（一台即可） |
+| 数据面 | VM 生命周期 / 网络 / 存储 / 快照 / VNC … | 注册节点 / 探活 / 反向代理 / 终端中继 / RBAC |
 
-- 存储池在线扩容（`zpool add`，同类型校验、混合 vdev 放行）。
-- Scrub 与健康监控（启动 / 停止 / 状态 / 进度 / 错误清单）。
-- dataset 属性编辑（压缩 / atime / quota / refquota）。
+二者**互补而非替代**：QVMConsole 提供单节点的虚拟化能力，QVMHub 负责把多个 QVMConsole 编织成一个统一的管理平面。接入一个节点，只需要该节点的 **API 地址 + 一个 admin 级 API Key**。
 
-**角色化侧边栏菜单**：按角色（管理员 / 弹性云 / 轻量云）独立配置侧边栏菜单，系统设置内置菜单管理编辑器。
+## 核心特性
 
-## 项目简介
+- **节点注册与凭据保管**：以 `API Base URL + API Key（加密存储）` 登记每个 QVMConsole 节点，可选填 SSH 信息用于跨节点运维；凭据集中保管于内置密钥库，并记录最近使用时间。
+- **反向代理透传**：浏览器请求打到 `/api/n/{nodeId}/...`，控制器剥离前缀、附上节点 API Key 后转发到节点原生 API，响应原样回传。QVMHub 不实现也不重复造任何虚拟机功能。
+- **流式与终端中继**：
+  - **SSE** 长任务实时推送（无超时客户端 + 分块 Flush，不被切断）；
+  - **Blob / 大文件** 缓冲透传（模板包上传下载）；
+  - **VNC 与 LXC Web 终端** 经 WebSocket 跨节点中继。
+- **节点健康监控**：后台探活调度器（约 15s 探版本、60s 探资源），纯 HTTP 探测不打 SSH，结果写入内存健康缓存并回写节点表；总览页只读缓存，零请求时不向节点扇出。
+- **统一账户与 RBAC**：登录 / 注册 / 邀请 / 找回密码 / 2FA / 安全初始化；网关层基于角色对节点与路径做访问控制。
+- **API Key 自动化**：除账户安全流程外，接口默认兼容 API Key 调用，便于外部系统集成。
+- **多节点总览**：聚合各节点 CPU / 内存 / 磁盘 / VM 数等指标，统一大屏。
+- **跨节点迁移**：在登记的节点之间迁移虚拟机（经节点 SSH 信息执行运维步骤）。
 
-QVMConsole 是一个面向小型企业和个人私有云服务场景的开源虚拟机管理平台，基于 KVM/QEMU 虚拟化技术深度集成，提供从虚拟机生命周期管理、网络与存储编排、快照与克隆、防火墙与带宽治理，到 Web 控制台与 API 一体化交付的完整解决方案。
+## 架构概览
 
-### 核心价值
-
-- **降低运维门槛**：提供"即开即用"的虚拟化管理平台，减少重复造轮子的成本
-- **模板即点即用**：预制 Linux/Windows/OpenWrt 等常用系统模板，无需了解 KVM 底层命令，只需填几个表单字段即可在数分钟内完成虚拟机创建；系统自动处理磁盘格式、引导类型、网络配置等复杂细节
-- **模块化设计**：可插拔网络后端（如 Open vSwitch），适配多样化的网络拓扑与安全策略
-- **双入口架构**：Web 控制台与 RESTful API 兼顾自动化与人工运维效率
-- **可观测性**：任务队列与 SSE 机制实现长耗时操作的可观测与可中断，保障大规模并发下的稳定性
-
-## 核心功能
-
-### 虚拟机生命周期管理
-- 完整的电源操作（开机/关机/重启/强制断电/重置）
-- 配额控制与权限校验
-- 维护模式与优雅关机
-- 动态内存配置与调整
-
-### 网络虚拟化
-- VPC 逻辑交换机与安全组
-- 端口转发与静态 IP 管理
-- 防火墙策略（VM/宿主机双层）
-- 网络诊断与抓包工具
-
-### 存储管理
-- 宿主机存储池管理（格式化/分区/LVM 卷）
-- 模板管理（制作/导入/导出/删除）
-- 磁盘管理与 IOPS 限制
-- 用户 ISO 挂载
-
-### 用户权限与配额
-- 多租户支持（弹性云/轻量云）
-- 细粒度配额管理（CPU/内存/磁盘/VM 数/存储/带宽/流量/公网 IP/端口转发/快照）
-- SSH 访问控制与邀请注册流程
-
-### 监控与任务调度
-- VM/宿主机统计与历史数据
-- 异步任务队列与 SSE 实时推送
-- 定时事件中心与资源回收
-
-### 快照备份
-- 创建/恢复/删除/批量删除快照
-- NVRAM 与共享目录兼容性检查
-- 配额校验与任务跟踪
-
-### 模板创建虚拟机
-- **模板管理**：支持从运行中虚拟机一键制作模板、导入/导出模板包（tar.gz）、预览导入完整性校验
-- **多类型模板支持**：Linux（cloud-init）、Windows（ConfigDrive）、OpenWrt（UCI 配置注入）、FnOS（virt-customize）及"不初始化"模式
-- **统一克隆架构**：支持完整克隆与链式克隆两种模式，完整克隆产生独立磁盘镜像，链式克隆基于 backing chain 实现快速部署
-- **系统初始化控制**：可禁用系统初始化，保持模板原始系统配置；支持阻塞式/非阻塞式启动后命令执行
-- **智能引导检测**：自动检测 UEFI/BIOS 引导类型，复制 NVRAM 路径，确保跨架构兼容性
-- **OpenWrt 双模式初始化**：自动检测 ext4 根分区和 squashfs+overlay 两种磁盘布局，智能选择 virt-customize 或 guestfish 注入网络配置
-- **Windows ConfigDrive**：符合 OpenStack 标准的 ISO 镜像，通过 cloudbase-init 自动完成主机名、密码等初始化配置
-- **元数据驱动**：模板类型、分类、默认硬件配置、哈希校验、模板族关系等均由 `.meta.json` 元数据文件管理
-- **版本与完整性校验**：MD5 + SHA256 双重哈希校验，确保模板磁盘完整性
-- **模板族管理**：支持模板父子关系、节点树、级联删除、静默提升与热提升操作
+```
+                       ┌──────────────────────────────────────────────┐
+   浏览器 ────────────▶│              QVMHub 控制器（纯 HTTP）          │
+  (Web 控制台)         │  统一登录 · RBAC · API Key · 2FA              │
+                       │  节点注册 · 探活调度 · 健康缓存 · 多节点总览   │
+                       │  反向代理 · SSE/Blob 透传 · VNC/终端 WS 中继  │
+                       │  密钥保管库                                   │
+                       └────────┬───────────┬───────────┬──────────────┘
+                                │ /api/n/1  │ /api/n/2  │ /api/n/3
+                       ┌────────▼─────┐ ┌───▼────────┐ ┌──▼──────────┐
+                       │  QVMConsole  │ │ QVMConsole │ │ QVMConsole  │
+                       │    节点 A    │ │   节点 B   │ │   节点 C    │
+                       │  (libvirt)   │ │ (libvirt)  │ │  (libvirt)  │
+                       └──────────────┘ └────────────┘ └─────────────┘
+```
 
 ## 技术栈
 
-### 后端
-- **语言**: Go 1.25.4
-- **Web 框架**: Gin v1.12.0
-- **数据库**: SQLite + GORM v1.31.1
-- **虚拟化**: go-libvirt RPC
-- **认证**: JWT v5.3.1
-- **日志**: lumberjack v2.2.1
+**后端**（`server/`，Go）
+- 语言：Go 1.26
+- Web 框架：Gin v1.12
+- 数据库：SQLite + GORM v1.31
+- 鉴权：JWT v5（golang-jwt/jwt v5.3）、TOTP 2FA（pquerna/otp）
+- 通信：gorilla/websocket（控制台 / 终端中继）、creack/pty（终端 PTY）
+- 日志：lumberjack v2.2
 
-### 前端
-- **框架**: Vue 3.5.30
-- **UI 库**: Element Plus v2.13.5
-- **HTTP 客户端**: Axios v1.15.2
-- **VNC 客户端**: @novnc/novnc v1.7.0
-- **构建工具**: Vite v8.0.0
+**前端**（`web/`，Vue 3）
+- 框架：Vue 3.5 + Element Plus 2.13
+- 构建：Vite 8
+- 状态 / 路由：Pinia、Vue Router
+- 可视化：ECharts 6
+- 控制台：@novnc/novnc（VNC）、xterm（LXC / Web 终端）
 
-### 虚拟化基础设施
-- **虚拟化平台**: KVM/QEMU
-- **网络虚拟化**: Open vSwitch
-- **Windows 初始化**: ConfigDrive 标准支持
+## 快速开始
 
-## 系统要求
+### 一、生产部署（`install.sh`）
 
-### 硬件要求
-- 支持 VT-x/AMD-V 的 CPU
-- 至少 4GB RAM（推荐 8GB+）
-- 至少 50GB 可用磁盘空间
+在打包产物目录（含 `qvmhub` 二进制 + `web-dist/` + `install.sh`）下以 root 运行：
 
-### 软件要求
-- **操作系统**: Debian/Ubuntu（推荐 Debian 12+）
-- **虚拟化**: KVM/QEMU
-- **网络**: Open vSwitch
-- **依赖工具**: genisoimage（用于 Windows 虚拟机初始化）
+```bash
+sudo ./install.sh                       # 交互安装，默认端口 8088
+sudo ./install.sh install -y            # 非交互
+sudo ./install.sh install --port 9000   # 指定端口
+sudo ./install.sh uninstall             # 卸载（保留数据 / 配置）
+sudo ./install.sh uninstall --purge     # 彻底清除
+```
 
-### 开发贡献指南
-作为一个由独立开发者维护的大型开源项目，QVMConsole 需要社区贡献者的支持才能持续完善。我们欢迎并鼓励您使用 AI 等工具进行功能修复与开发，但请务必遵守以下准则：
+安装会：
+- 部署二进制到 `/opt/qvmhub/qvmhub`、前端到 `/opt/qvmhub/web-dist/`；
+- 写配置到 `/etc/qvmhub/env`（`KVM_*` 变量，自动生成 JWT / 凭据加密密钥 / admin 密码）；
+- 注册 systemd 服务 `qvmhub.service`（以 `qvmhub` 系统用户运行）并启动。
 
-1. **规则遵守**：在使用 AI 工具时，必须将根目录的 `AGENTS.md` 文件作为核心提示词规则
-2. **功能边界**：开源版本中不得提交包含 Pro 版功能的代码。Pro 版功能清单详见：[赞助功能说明](https://qvmcdocs.xiaozhuhouses.asia/docs/install/sponsorship)
-3. **场景通用性**：提交的功能应面向通用化使用场景，符合广大用户的需求。针对特定场景的定制功能建议自行 fork 仓库维护
+完成后访问 `http://<主机IP>:8088`，使用默认账号 `admin` 登录（首次安装时脚本会打印随机生成的密码，请妥善保存）。
 
-### 安全漏洞报告
-如果您发现项目存在安全漏洞，无论严重程度如何，请勿在 GitHub Issues 中公开报告，以避免安全风险被恶意利用。
+### 二、开发模式（`start-dev.sh`）
 
-**安全报告渠道**：
-- 作者QQ：3354416548
-- 电子邮件：xiaozhuhs@foxmail.com
+```bash
+./start-dev.sh
+```
 
----
+同时拉起后端（`air` 热重载）与前端（`vite dev`）：
+
+- 后端 API：`http://localhost:8088`
+- 前端开发服务器：`http://0.0.0.0:8089`（已配置 `/api` 代理到后端，含 WebSocket）
+
+> 二进制读取的仍是 `KVM_*` 前缀环境变量（见 `server/config/config.go`）。
+
+### 三、接入第一个 QVMConsole 节点
+
+1. 在某台已部署 QVMConsole 的宿主机上，生成一个 **admin 级 API Key**，记下其 `API Base URL`、`Key ID` 与 `Key`。
+2. 用 admin 登录 QVMHub，进入「节点管理」，新增节点并填入：名称、API Base URL、API Key ID、API Key（加密入库），以及（可选，用于跨节点迁移的）SSH 信息。
+3. 保存后 QVMHub 立即开始探活，节点状态变为 `online` 后，即可在总览与各功能页对该节点进行操作。
+
+## 配置
+
+运行时配置集中于 `/etc/qvmhub/env`（开发模式下由 `server/.env` 或环境变量提供），统一使用 `KVM_` 前缀。常用项：
+
+| 变量 | 说明 | 默认 |
+|---|---|---|
+| `KVM_PORT` | Web / API 监听端口 | `8088` |
+| `KVM_DB_PATH` | SQLite 数据库路径 | `/opt/qvmhub/data/qvmhub.db` |
+| `KVM_ADMIN_USER` / `KVM_ADMIN_PASS` | 初始管理员账号 / 密码 | `admin` / 首次随机 |
+| `KVM_JWT_SECRET` | JWT 签名密钥 | 首次随机 |
+| `KVM_VM_CREDENTIAL_SECRET` | 节点凭据 / 密钥库加密密钥 | 首次随机 |
+| `KVM_JWT_EXPIRE_HOURS` | JWT 有效期（小时） | `24` |
+| `KVM_LOG_DIR` / `KVM_LOG_LEVEL` | 日志目录 / 级别 | `/var/log/qvmhub` / `info` |
+
+部署后修改端口也可用运维脚本：`./qvmc-manage.sh`（同步更新 env 与防火墙规则并重启服务）。
+
+## 项目结构
+
+```
+qvmhub/
+├── server/                 # Go 后端（控制器）
+│   ├── main.go             # 入口：配置 / 日志 / DB / 探活调度器 / 路由
+│   ├── config/             # 配置加载（KVM_* 环境变量 + DB 持久化设置）
+│   ├── router/             # 路由注册（/api/auth、/api/nodes、/api/n/:nodeId/* …）
+│   ├── handler/            # proxy / console_relay / overview / nodes / auth / api_key …
+│   ├── middleware/         # rbac（网关层权限）/ ratelimit
+│   ├── model/              # GORM 模型（host_nodes、user、user_api_key …）
+│   ├── service/nodereg/    # 节点探活：probe / scheduler / cache（纯 HTTP）
+│   └── web-dist/           # 前端构建产物
+├── web/                    # Vue 3 前端
+│   └── src/views/          # node / dashboard / vm / lxc / network / storage …
+├── install.sh              # 生产部署（systemd）
+├── start-dev.sh            # 开发模式（air + vite）
+├── build.sh                # 打包二进制 + 前端
+└── qvmc-manage.sh          # 运维管理（改端口等）
+```
+
+## 贡献
+
+欢迎提 Issue 与 PR。开发约定见 [`AGENTS.md`](AGENTS.md)。
+
+> 说明：`AGENTS.md` 中的部分内容继承自上游 QVMConsole，主要面向**节点侧**虚拟机功能的开发；QVMHub **网关层**的开发关注点在于节点注册 / 探活、反向代理与流式中继、网关 RBAC、密钥库等。
+
+## 安全漏洞报告
+
+如发现安全漏洞，请勿在公开 Issue 中提交，以免被恶意利用。请通过 GitHub 私信或仓库公布的私密渠道联系维护者。
+
+## License
+
+[Apache License 2.0](LICENSE)
 
 ## 致谢
 
-感谢所有为 QVMConsole 做出贡献的开发者！
+QVMHub 基于 [QVMConsole](https://github.com/QVMConsole/QVMConsole) 二次开发 —— 感谢上游项目及其贡献者。
 
----
-
-<div align="center">
-
-**QVMConsole** - 让虚拟化管理更简单
-
-[官方网站](https://www.qvmconsole.cn/) | [文档站点](https://qvmcdocs.xiaozhuhouses.asia/) | [部署指南](https://qvmcdocs.xiaozhuhouses.asia/docs/install/)
-
-</div>
+维护者：**lrquor-t** · https://github.com/lrquor-t/QVMHub

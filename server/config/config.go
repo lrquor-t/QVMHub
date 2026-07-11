@@ -218,7 +218,7 @@ func Init() {
 
 	templateDir := getEnv("KVM_TEMPLATE_DIR", "/var/lib/libvirt/images/templates")
 	GlobalConfig = &Config{
-		Port:                                  getEnvInt("KVM_PORT", 8080),
+		Port:                                  getEnvInt("KVM_PORT", 8088),
 		DBPath:                                getEnv("KVM_DB_PATH", "./data/kvm_console.db"),
 		JWTSecret:                             getEnv("KVM_JWT_SECRET", defaultJWTSecret),
 		VMCredentialSecret:                    getEnv("KVM_VM_CREDENTIAL_SECRET", ""),

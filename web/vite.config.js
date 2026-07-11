@@ -12,11 +12,11 @@ export default defineConfig({
     }
   },
   server: {
-    port: 5173,
+    port: 8089,
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8088',
         changeOrigin: true,
         ws: true, // 支持 WebSocket（noVNC 需要）
         timeout: 0, // 大文件上传不超时（0=无限制）

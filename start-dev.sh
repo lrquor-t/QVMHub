@@ -83,8 +83,8 @@ FRONTEND_PID=$!
 
 echo ""
 info "========================================="
-info "  后端: http://localhost:8080"
-info "  前端: http://0.0.0.0:5173"
+info "  后端: http://localhost:8088"
+info "  前端: http://0.0.0.0:8089"
 info "  按 Ctrl+C 停止所有服务"
 info "========================================="
 echo ""

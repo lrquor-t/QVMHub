@@ -183,7 +183,7 @@ change_port() {
     echo ""
 
     # 获取当前端口
-    local current_port="${KVM_PORT:-8080}"
+    local current_port="${KVM_PORT:-8088}"
     echo -e "当前端口: ${CYAN}${current_port}${NC}"
     echo ""
 
