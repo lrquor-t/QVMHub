@@ -115,6 +115,9 @@ func Setup() *gin.Engine {
 		authorized.Use(middleware.AuthMiddleware())
 		authorized.Use(middleware.ForcePasswordChangeMiddleware())
 		{
+			// 总览页:所有登录用户可读(跨节点只读,viewer 亦可见);只读健康缓存 + DB 名册。
+			authorized.GET("/overview", handler.GetOverview)
+
 			// ==================== 节点注册表（管理员） ====================
 			// 复用 QVMConsole 的 HostNode CRUD；P1 起被探活/健康缓存复用。
 			nodes := authorized.Group("/nodes")
@@ -125,7 +128,8 @@ func Setup() *gin.Engine {
 				nodes.GET("/:id/migration-options", handler.GetNodeMigrationOptions)
 				nodes.PUT("/:id", handler.UpdateHostNode)
 				nodes.DELETE("/:id", handler.DeleteHostNode)
-				nodes.POST("/:id/probe", handler.ProbeHostNode)
+				// HTTP-only 健康探活(替代原 SSH 能力探活;QVMHub 从不 SSH,§5.1)。
+				nodes.POST("/:id/probe", handler.RefreshNodeHealth)
 			}
 
 			// ==================== 运维用户管理（管理员） ====================

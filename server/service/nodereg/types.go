@@ -8,9 +8,10 @@ import "time"
 
 // 节点状态枚举(与 model.HostNode.Status 文本一致)。
 const (
-	StatusUnknown = "unknown"
-	StatusOnline  = "online"
-	StatusOffline = "offline"
+	StatusUnknown  = "unknown"
+	StatusOnline   = "online"
+	StatusOffline  = "offline"
+	StatusDisabled = "disabled"
 )
 
 // NodeStats 是 /api/host/stats 的子集(与 QVMConsole service/vm/types.go HostStats 对齐)。

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -8,6 +9,7 @@ import (
 	"qvmhub/logger"
 	"qvmhub/model"
 	"qvmhub/router"
+	"qvmhub/service/nodereg"
 )
 
 // Version 构建时注入:go build -ldflags="-s -w -X main.Version=v0.1.0"
@@ -43,6 +45,13 @@ func main() {
 
 	// 安全检查
 	config.ValidateSecurity()
+
+	// 启动节点探活调度器(15s version / 60s stats,后台写健康缓存 + 回写 host_nodes)。
+	// 在 router.Setup 之前启动,确保总览页一旦可读即有探活在跑(§5.2)。
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	nodereg.GlobalScheduler.Start(ctx)
+	defer nodereg.GlobalScheduler.Stop()
 
 	// 路由 + 启动
 	r := router.Setup()
