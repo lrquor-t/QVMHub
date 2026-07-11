@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"qvmhub/model"
 	"qvmhub/service/host"
 )
 
@@ -19,33 +20,53 @@ var (
 	proxyStreamClient = &http.Client{} // SSE/长流:不设整体超时
 )
 
-// ProxyNode 是通用反向代理:剥 /api/n/{nodeId} 前缀、附节点 admin API Key、转发并把响应原样回传。
-// 设计 §3.1:浏览器把请求打到 /api/n/{nodeId}/api/...,控制器透传到节点。
-func ProxyNode(c *gin.Context) {
+// loadProxyNode 解析 nodeId、加载节点、校验启用、内存解密 admin Key。
+// 失败时写入 HTTP 错误并返回 ok=false(成功前响应未被劫持,可安全写 JSON)。
+func loadProxyNode(c *gin.Context) (*model.HostNode, string, bool) {
 	nodeID, err := strconv.ParseUint(c.Param("nodeId"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "无效的节点 ID"})
-		return
+		return nil, "", false
 	}
-
 	node, err := host.GetHostNode(uint(nodeID))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "节点不存在", "node_id": nodeID})
-		return
+		return nil, "", false
 	}
 	if !node.Enabled {
 		c.JSON(http.StatusBadGateway, gin.H{"code": 502, "message": "节点已禁用", "node_id": node.ID})
-		return
+		return nil, "", false
 	}
-
 	apiKey, err := host.DecryptHostNodeAPIKey(*node)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "节点凭证解密失败"})
+		return nil, "", false
+	}
+	return node, apiKey, true
+}
+
+// ProxyNode 是通用反向代理:剥 /api/n/{nodeId} 前缀、附节点 admin API Key、转发并把响应原样回传。
+// 设计 §3.1:浏览器把请求打到 /api/n/{nodeId}/api/...,控制器透传到节点。
+// 控制台路径(/api/vm/<name>/vnc/ws、/api/lxc/<name>/terminal/ws)走 WS 中继(§6.1/§6.3)。
+func ProxyNode(c *gin.Context) {
+	proxyPath := c.Param("proxyPath")
+
+	if isConsoleWSPath(proxyPath) {
+		node, apiKey, ok := loadProxyNode(c)
+		if !ok {
+			return
+		}
+		relayConsoleWS(c, node, apiKey, proxyPath)
+		return
+	}
+
+	node, apiKey, ok := loadProxyNode(c)
+	if !ok {
 		return
 	}
 
 	// proxyPath 形如 "/api/vm/list"(含前导斜杠),直接拼到节点 base URL 之后。
-	target := strings.TrimRight(node.APIBaseURL, "/") + c.Param("proxyPath")
+	target := strings.TrimRight(node.APIBaseURL, "/") + proxyPath
 	if raw := c.Request.URL.RawQuery; raw != "" {
 		target += "?" + raw
 	}
