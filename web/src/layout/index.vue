@@ -52,7 +52,7 @@
         </div>
         <div class="right-menu">
           <el-select
-            v-model="nodeStore.selectedNodeId"
+            :model-value="nodeStore.selectedNodeId"
             placeholder="选择节点"
             size="small"
             class="node-selector"
@@ -127,9 +127,7 @@
       <!-- 路由占位层 -->
       <el-main class="app-main">
         <router-view v-slot="{ Component }">
-          <transition name="fade-transform" mode="out-in">
-            <component :is="Component" />
-          </transition>
+          <component :is="Component" :key="nodeStore.selectedNodeId || 'no-node'" />
         </router-view>
       </el-main>
 
@@ -453,7 +451,7 @@ onMounted(() => {
     document.documentElement.classList.add('dark')
   }
   refreshSecurityInfo()
-  loadNodes()
+  refreshAndGuard()
 
   // 监听弹窗打开，自动收起异步任务面板
   dialogObserver = new MutationObserver((mutations) => {
@@ -498,7 +496,8 @@ async function loadNodes() {
   nodesLoading.value = true
   try {
     const res = await getOverview()
-    const list = res?.data?.nodes || []
+    // 后端 overview 返回字段是 node_id;此处补一个 id 别名,供下拉/选择逻辑统一用 n.id。
+    const list = (res?.data?.nodes || []).map((n) => ({ ...n, id: n.node_id }))
     nodeStore.nodes = list
     nodeStore.pickDefault()
     if (nodeStore.selectedNodeName) {
@@ -513,13 +512,34 @@ async function loadNodes() {
   }
 }
 
+// controller 自有页面(不需要选中节点即可访问);其余为业务页,必须先有选中节点。
+const CONTROLLER_PAGES = ['/nodes', '/user/list', '/settings', '/api-docs', '/about', '/task/recent', '/my-storage']
+function isControllerPage(path) {
+  return CONTROLLER_PAGES.some((p) => path === p || path.startsWith(p + '/'))
+}
+
+// 加载节点列表;若当前在业务页但没有节点,引导去「节点管理」添加(避免业务页狂报 404)。
+async function refreshAndGuard() {
+  await loadNodes()
+  if (!isControllerPage(route.path) && nodeStore.nodes.length === 0 && !nodeStore.selectedNodeId) {
+    ElMessage.warning('请先在「节点管理」添加一个节点')
+    router.replace('/nodes')
+  }
+}
+
+// 切换到业务页时,若仍未选中节点(如刚加完第一个节点),尝试加载并自动选中。
+watch(() => route.path, (p) => {
+  if (!isControllerPage(p) && !nodeStore.selectedNodeId) {
+    refreshAndGuard()
+  }
+})
+
 function onNodeChange(id) {
   const n = nodeStore.nodes.find((x) => String(x.id) === String(id))
   nodeStore.setSelected(n || { id, name: '' })
-  // 切节点后刷新当前页数据(业务页按新节点重新拉取)。
-  if (route.meta?.keepAlive !== true) {
-    router.replace({ path: route.fullPath, query: { ...route.query, _n: Date.now() } }).catch(() => {})
-  }
+  // 切节点后由 <router-view :key="selectedNodeId"> 触发当前业务页重挂载,
+  // 页面 onMounted 会用新 selectedNodeId 经代理 /api/n/{id}/... 重新拉取数据。
+  ElMessage.success({ message: `已切换到节点 ${n?.name || id}`, duration: 1500 })
 }
 
 function nodeStatusLabel(n) {

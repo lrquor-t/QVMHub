@@ -1052,6 +1052,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, reactive } from 'vue'
 import { getDiskList, getVmIP, getVmList, operateVm, rescueVm, lockVm, unlockVm, makeVMIndependent } from '@/api/vm'
+import { sseURL } from '@/utils/request'
 import { getSelfVMs, getSelfLightweightVmRegistrations, confirmSelfLightweightVmRegistration } from '@/api/user'
 import { getUserInfo } from '@/api/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -1566,9 +1567,7 @@ const initSSE = () => {
     include_ip: '0'
   })
   // 管理员使用 /vm/sse，用户使用 /self/vms/sse
-  const sseUrl = isAdmin.value
-    ? `${baseUrl}/vm/sse?${query.toString()}`
-    : `${baseUrl}/self/vms/sse?${query.toString()}`
+  const sseUrl = sseURL(isAdmin.value ? '/vm/sse' : '/self/vms/sse', query.toString())
 
   if (eventSource) {
     eventSource.close()

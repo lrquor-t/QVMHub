@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request, { sseURL } from '@/utils/request'
 
 export function getHostStats() {
   return request({
@@ -30,6 +30,5 @@ export function getHostKSMStatus() {
 }
 
 export function createHostStatsSSE(token) {
-  const baseUrl = import.meta.env.VITE_APP_BASE_API || '/api'
-  return new EventSource(`${baseUrl}/host/stats/sse?token=${token}`)
+  return new EventSource(sseURL('/host/stats/sse', 'token=' + encodeURIComponent(token)))
 }

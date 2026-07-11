@@ -38,6 +38,7 @@ kvm-console-linux-amd64
 kvm-console
 kvm-console.exe
 kvm_console
+server/qvmhub-bin
 server/tmp/
 release/
 docs-web

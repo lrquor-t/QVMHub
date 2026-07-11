@@ -1,5 +1,5 @@
 import axios from 'axios'
-import request from '@/utils/request'
+import request, { sseURL } from '@/utils/request'
 
 // 获取虚拟机列表
 export function getVmList(params) {
@@ -36,8 +36,7 @@ export function getVmPCIEInfo(name) {
 
 // 创建虚拟机详情 SSE 连接（实时推送）
 export function createVmDetailSSE(name, token) {
-  const baseUrl = import.meta.env.VITE_APP_BASE_API || '/api'
-  return new EventSource(`${baseUrl}/vm/${name}/sse?token=${token}`)
+  return new EventSource(sseURL(`/vm/${name}/sse`, 'token=' + token))
 }
 
 // 编辑虚拟机配置

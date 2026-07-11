@@ -171,6 +171,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { getTaskList, getTaskDetail, cancelTask } from '@/api/task'
 import { getTemplateExportDownloadUrl } from '@/api/vm'
+import { sseURL } from '@/utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { List, ArrowDown, Monitor } from '@element-plus/icons-vue'
 
@@ -336,8 +337,7 @@ const fetchTaskDetailData = async (taskId, silent = false) => {
 const connectSSE = () => {
   const token = localStorage.getItem('token')
   if (!token) return
-  const baseURL = import.meta.env.VITE_APP_BASE_API || '/api'
-  const url = `${baseURL}/task/sse?token=${encodeURIComponent(token)}`
+  const url = sseURL('/task/sse', 'token=' + encodeURIComponent(token))
 
   sseConnected.value = 'connecting'
   eventSource = new EventSource(url)

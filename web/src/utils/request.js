@@ -19,7 +19,20 @@ function resolveNodePrefix(url) {
   }
   const nodeStore = useNodeStore()
   const id = nodeStore.selectedNodeId
-  return id ? '/n/' + id : ''
+  if (!id) return ''
+  // 设计 §3.1:最终 URL 为 /api/n/{id}/api/<业务路径>,代理剥 /api/n/{id} 后
+  // 转发到节点 /api/<业务路径>。此处补 "/api"(节点侧路由前缀必须保留)。
+  return '/n/' + id + '/api'
+}
+
+// sseURL 为浏览器原生 EventSource 构造节点感知的完整 URL(EventSource 不走 axios 拦截器)。
+// path 形如 "/host/stats/sse";query 形如 "token=xxx"(可空)。
+export function sseURL(path, query = '') {
+  const nodeStore = useNodeStore()
+  const id = nodeStore.selectedNodeId
+  const prefix = id ? '/n/' + id + '/api' : ''
+  const qs = query ? (query.startsWith('?') ? query : '?' + query) : ''
+  return baseURL + prefix + path + qs
 }
 
 

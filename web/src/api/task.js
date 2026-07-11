@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request, { sseURL } from '@/utils/request'
 
 // 获取任务列表（支持筛选）
 export function getTaskList(params) {
@@ -39,7 +39,5 @@ export function clearFinishedTasks() {
  */
 export function createTaskSSE() {
   const token = localStorage.getItem('token')
-  const baseURL = import.meta.env.VITE_APP_BASE_API || '/api'
-  const url = `${baseURL}/task/sse?token=${encodeURIComponent(token)}`
-  return new EventSource(url)
+  return new EventSource(sseURL('/task/sse', 'token=' + encodeURIComponent(token)))
 }
